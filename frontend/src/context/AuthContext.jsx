@@ -10,6 +10,10 @@ export const AuthProvider = ({children}) => {
     const [user, setUser] = useState(null)
     const [loading, setLoading] = useState(true)
 
+    const axiosInstance = axios.create({
+        baseURL: import.meta.env.VITE_API_BASE_URL
+    })
+
     useEffect(() => {
         const token = localStorage.getItem('token')
         if(token){
@@ -17,6 +21,7 @@ export const AuthProvider = ({children}) => {
                 const decoded = jwtDecode(token)
                 if(decoded.exp * 1000 > Date.now()){
                     setUser(decoded)
+                    axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`
                 }else{
                     localStorage.removeItem('token')
                 }
@@ -30,9 +35,10 @@ export const AuthProvider = ({children}) => {
 
     const login = async (credentials) => {
         try {
-            const res = await axios.post('/api/users/login', credentials)
+            const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/users`, credentials)
             localStorage.setItem('token', res.data.token)
             setUser(jwtDecode(res.data.token))
+            axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`
         } catch (error) {
             throw new Error(error.response?.data?.message || "Login failed.")
         }
@@ -40,9 +46,11 @@ export const AuthProvider = ({children}) => {
 
     const signup = async (credentials) => {
         try {
-            const res = await axios.post('/api/users', credentials)
+            const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/users`, credentials)
             localStorage.setItem('token', res.data.token)
-            setUser(jwtDecode(res.data.token))
+            const decoded = jwtDecode(res.data.token)
+            setUser(decoded)
+            axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`
         } catch (error) {
             throw new Error(error.response?.data?.message || "Sign up failed.")
         }
@@ -51,6 +59,7 @@ export const AuthProvider = ({children}) => {
     const logout = () => {
         localStorage.removeItem('token')
         setUser(null)
+        delete axiosInstance.defaults.headers.common['Authorization']
     }
 
     const value = {
@@ -58,7 +67,8 @@ export const AuthProvider = ({children}) => {
         loading,
         login,
         signup,
-        logout
+        logout,
+        axiosInstance
     }
 
     return (
