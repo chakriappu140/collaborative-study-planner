@@ -1,42 +1,41 @@
-import React, {useState, useEffect} from "react"
-import {useAuth} from "../context/AuthContext.jsx"
-import {useNavigate} from "react-router-dom"
-import CreateGroupModal from "../components/CreateGroupModal.jsx"
-import {Link} from "react-router-dom"
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext.jsx';
+import { useNavigate } from 'react-router-dom';
+import CreateGroupModal from '../components/CreateGroupModal.jsx';
+import { Link } from 'react-router-dom';
 
 const Dashboard = () => {
-    const {user, logout, axiosInstance} = useAuth() // <-- The fix is here
-    
-    const navigate = useNavigate()
-    const [groups, setGroups] = useState([])
-    const [isModalOpen, setIsModalOpen] = useState(false)
-    const [loadingGroups, setLoadingGroups] = useState(true)
+    const { user, logout, axiosInstance } = useAuth(); // <-- FIX: Add axiosInstance here
+    const navigate = useNavigate();
+    const [groups, setGroups] = useState([]);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [loadingGroups, setLoadingGroups] = useState(true);
 
     useEffect(() => {
         const fetchGroups = async () => {
             try {
-                const res = await axiosInstance.get("/api/groups/my-groups")
-                setGroups(res.data)
+                const res = await axiosInstance.get('/api/groups/my-groups');
+                setGroups(res.data);
             } catch (error) {
-                console.error("Failed to fetch groups : ", error)
-            }finally{
-                setLoadingGroups(false)
+                console.error('Failed to fetch groups:', error);
+            } finally {
+                setLoadingGroups(false);
             }
-        }
+        };
 
-        if(user){
-            fetchGroups()
+        if (user) {
+            fetchGroups();
         }
-    }, [user, axiosInstance])
+    }, [user, axiosInstance]); // <-- FIX: Add axiosInstance to the dependency array
 
     const handleLogout = () => {
-        logout()
-        navigate("/login")
-    }
+        logout();
+        navigate('/login');
+    };
 
     const handleGroupCreated = (newGroup) => {
-        setGroups([...groups, newGroup])
-    }
+        setGroups([...groups, newGroup]);
+    };
 
     return (
         <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center p-8">
@@ -54,7 +53,7 @@ const Dashboard = () => {
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-2xl font-semibold">My Groups</h2>
                     <button
-                        onClick = {() => setIsModalOpen(true)}
+                        onClick={() => setIsModalOpen(true)}
                         className="px-4 py-2 text-white bg-green-600 rounded hover:bg-green-700 transition-colors"
                     >
                         Create New Group
@@ -67,11 +66,11 @@ const Dashboard = () => {
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {groups.map((group) => (
-                            <Link to={`/groups/${group._id}`} key = {group._id}>
+                            <Link to={`/groups/${group._id}`} key={group._id}>
                                 <div key={group._id} className="bg-gray-800 p-6 rounded-lg shadow-lg">
                                     <h3 className="text-xl font-bold mb-2">{group.name}</h3>
-                                    <p className="text-gray-400">{group.description || "No description provided."}</p>
-                                    <p className="text-sm mt-2">Members : {group.members.length}</p>
+                                    <p className="text-gray-400">{group.description || 'No description provided.'}</p>
+                                    <p className="text-sm mt-2">Members: {group.members.length}</p>
                                 </div>
                             </Link>
                         ))}
@@ -86,7 +85,7 @@ const Dashboard = () => {
                 />
             )}
         </div>
-    )
-}
+    );
+};
 
 export default Dashboard;
