@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import CreateGroupModal from '../components/CreateGroupModal.jsx';
-import { Link } from 'react-router-dom';
 
 const Dashboard = () => {
     const { user, logout, axiosInstance } = useAuth(); // <-- FIX: Add axiosInstance here
@@ -67,7 +66,7 @@ const Dashboard = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {groups.map((group) => (
                             <Link to={`/groups/${group._id}`} key={group._id}>
-                                <div key={group._id} className="bg-gray-800 p-6 rounded-lg shadow-lg">
+                                <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
                                     <h3 className="text-xl font-bold mb-2">{group.name}</h3>
                                     <p className="text-gray-400">{group.description || 'No description provided.'}</p>
                                     <p className="text-sm mt-2">Members: {group.members.length}</p>
@@ -77,7 +76,6 @@ const Dashboard = () => {
                     </div>
                 )}
             </div>
-
             {isModalOpen && (
                 <CreateGroupModal
                     onClose={() => setIsModalOpen(false)}
