@@ -1,19 +1,20 @@
+// frontend/src/pages/GroupPage.jsx
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
-import { useSocket } from '../context/SocketContext.jsx'; // Import the socket hook
+import { useSocket } from '../context/SocketContext.jsx';
 import TaskBoard from '../components/TaskBoard.jsx';
 import CalendarView from '../components/CalendarView.jsx';
-import AddMemberModal from "../components/AddMemberModal.jsx"
+import AddMemberModal from '../components/AddMemberModal.jsx';
 
 const GroupPage = () => {
   const { groupId } = useParams();
   const navigate = useNavigate();
   const { axiosInstance, user } = useAuth();
-  const socket = useSocket(); // Use the socket hook
+  const socket = useSocket();
   const [group, setGroup] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false)
+  const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchGroupDetails = async () => {
@@ -35,40 +36,39 @@ const GroupPage = () => {
       fetchGroupDetails();
     }
 
-    if(socket){
-      socket.on("group:deleted", (deletedGroupId) => {
-        if(deletedGroupId === groupId){
-          alert("This group has been deleted by the admin")
-          navigate("/dashboard")
+    if (socket) {
+      socket.on('group:deleted', (deletedGroupId) => {
+        if (deletedGroupId === groupId) {
+          alert('This group has been deleted by the admin.');
+          navigate('/dashboard');
         }
-      })
-
-      socket.on("group:member_added", ({group: updatedGroup}) => {
+      });
+      socket.on('group:member_added', ({ group: updatedGroup }) => {
         setGroup(prevGroup => ({
           ...prevGroup,
           members: updatedGroup.members
-        }))
-      })
+        }));
+      });
     }
 
     return () => {
       if (socket) {
         socket.emit('leaveGroup', groupId);
-        socket.off("group:deleted")
-        socket.off("group:member_added")
+        socket.off('group:deleted');
+        socket.off('group:member_added');
       }
     };
   }, [groupId, axiosInstance, navigate, socket]);
 
   const handleDeleteGroup = async () => {
-    if(window.confirm("Are you sure you want to delte this group? All tasks and events will be permanently removed.")){
+    if (window.confirm('Are you sure you want to delete this group? All tasks and events will be permanently removed.')) {
       try {
-        await axiosInstance.delete(`/api/groups/${groupId}`)
-      } catch (error) {
-        console.error("Failed to delete group : ", error)
+        await axiosInstance.delete(`/api/groups/${groupId}`);
+      } catch (err) {
+        console.error('Failed to delete group:', err);
       }
     }
-  }
+  };
 
   if (loading) {
     return <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">Loading group details...</div>;
@@ -78,7 +78,8 @@ const GroupPage = () => {
     return <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">Group not found.</div>;
   }
   
-  const isUserAdmin = group.admin.toString() === user._id;
+  // FIX: Use user._id and ensure it's a string comparison
+  const isUserAdmin = user && group.admin.toString() === user._id;
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-8">
@@ -95,7 +96,7 @@ const GroupPage = () => {
             {isUserAdmin && (
                 <>
                     <button
-                        onClick={() => setIsAddMemberModalOpen(true)} // <-- NEW ONCLICK HANDLER
+                        onClick={() => setIsAddMemberModalOpen(true)}
                         className="px-4 py-2 bg-green-600 rounded hover:bg-green-700 transition-colors"
                     >
                         Add Member
@@ -127,6 +128,5 @@ const GroupPage = () => {
     </div>
   );
 };
-
 
 export default GroupPage;

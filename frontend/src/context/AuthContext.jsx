@@ -1,3 +1,4 @@
+// frontend/src/context/AuthContext.jsx
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
@@ -10,7 +11,6 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Memoized axios instance that updates when the user state changes
   const axiosInstance = useMemo(() => {
     const instance = axios.create({
       baseURL: import.meta.env.VITE_API_BASE_URL,
@@ -28,7 +28,8 @@ export const AuthProvider = ({ children }) => {
       try {
         const decoded = jwtDecode(token);
         if (decoded.exp * 1000 > Date.now()) {
-          setUser(decoded);
+          // Use decoded.id for consistency with your backend token generation
+          setUser({ _id: decoded.id, name: decoded.name, email: decoded.email }); 
         } else {
           localStorage.removeItem('token');
         }
@@ -45,7 +46,9 @@ export const AuthProvider = ({ children }) => {
       const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/users/login`, credentials);
       localStorage.setItem('token', res.data.token);
       const decoded = jwtDecode(res.data.token);
-      setUser(decoded);
+      // The JWT payload typically has 'id', while the user object has '_id'.
+      // We will normalize this to use '_id' everywhere.
+      setUser({ _id: decoded.id, name: res.data.name, email: res.data.email });
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Login failed.');
     }
@@ -56,7 +59,7 @@ export const AuthProvider = ({ children }) => {
       const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/users`, credentials);
       localStorage.setItem('token', res.data.token);
       const decoded = jwtDecode(res.data.token);
-      setUser(decoded);
+      setUser({ _id: decoded.id, name: res.data.name, email: res.data.email });
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Sign up failed.');
     }
@@ -73,7 +76,7 @@ export const AuthProvider = ({ children }) => {
     login,
     signup,
     logout,
-    axiosInstance, // Expose the authenticated axios instance
+    axiosInstance,
   };
 
   return (
