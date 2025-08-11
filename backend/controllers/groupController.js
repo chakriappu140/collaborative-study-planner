@@ -29,6 +29,28 @@ const getMyGroups = asyncHandler(async (req, res) => {
     res.status(200).json(groups)
 })
 
+const getGroupDetails = asyncHandler(async (req, res) => {
+    const {groupId} = req.params
+
+    const group = await Group.findById(groupId)
+
+    if(!group){
+        res.status(404)
+        throw new Error("Group not found")
+    }
+
+    const isMember = group.members.some(memberId => memberId.toString() === req.user._id.toString())
+
+    if(!isMember){
+        res.status(403)
+        throw new Error("User is not a member of this group")
+    }
+
+    const populatedGroup = await Group.findById(groupId).populate("members", "name email")
+
+    res.status(200).json(populatedGroup)
+})
+
 const deleteGroup = asyncHandler(async (req, res) => {
     const {groupId} = req.params
 
@@ -54,4 +76,4 @@ const deleteGroup = asyncHandler(async (req, res) => {
     res.status(200).json({message: "Group and all associated data removed"})
 })
 
-export {createGroup, getMyGroups, deleteGroup}
+export {createGroup, getMyGroups, deleteGroup, getGroupDetails}
