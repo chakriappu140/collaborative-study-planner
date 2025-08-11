@@ -1,5 +1,7 @@
 import asyncHandler from "express-async-handler"
 import Group from "../models/Group.js"
+import CalendarEvent from "../models/CalendarEvent.js"
+import Task from "../models/Task.js"
 
 const createGroup = asyncHandler(async (req, res) => {
     const {name, description} = req.body
@@ -27,4 +29,29 @@ const getMyGroups = asyncHandler(async (req, res) => {
     res.status(200).json(groups)
 })
 
-export {createGroup, getMyGroups}
+const deleteGroup = asyncHandler(async (req, res) => {
+    const {groupId} = req.params
+
+    const group = await Group.findById(groupId)
+
+    if(!group){
+        res.status(404)
+        throw new Error("Group not found")
+    }
+
+    if(group.admin.toString() !== req.user._id.toString()){
+        res.status(401)
+        throw new Error("User not authorized to delete this group")
+    }
+
+    await Task.deleteMany({group: groupId})
+    await CalendarEvent.deleteMany({group: groupId})
+
+    await Group.deleteOne({_id: groupId})
+
+    req.io.to(groupId).emit("group:deleted", groupId)
+
+    res.status(200).json({message: "Group and all associated data removed"})
+})
+
+export {createGroup, getMyGroups, deleteGroup}

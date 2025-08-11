@@ -33,12 +33,32 @@ const GroupPage = () => {
       fetchGroupDetails();
     }
 
+    if(socket){
+      socket.on("group:deleted", (deletedGroupId) => {
+        if(deletedGroupId === groupId){
+          alert("This group has been deleted by the admin")
+          navigate("/dashboard")
+        }
+      })
+    }
+
     return () => {
       if (socket) {
         socket.emit('leaveGroup', groupId);
+        socket.off("group:deleted")
       }
     };
   }, [groupId, axiosInstance, navigate, socket]);
+
+  const handleDeleteGroup = async () => {
+    if(window.confirm("Are you sure you want to delte this group? All tasks and events will be permanently removed.")){
+      try {
+        await axiosInstance.delete(`/api/groups/${groupId}`)
+      } catch (error) {
+        console.error("Failed to delete group : ", error)
+      }
+    }
+  }
 
   if (loading) {
     return <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">Loading group details...</div>;
@@ -63,8 +83,11 @@ const GroupPage = () => {
               Back to Dashboard
             </button>
             {isUserAdmin && (
-              <button className="px-4 py-2 bg-yellow-600 rounded hover:bg-yellow-700 transition-colors">
-                Manage Group
+              <button
+                onClick={handleDeleteGroup} // <-- NEW onClick handler
+                className="px-4 py-2 bg-red-600 rounded hover:bg-red-700 transition-colors" // <-- Changed color to red
+              >
+                Delete Group
               </button>
             )}
           </div>
@@ -79,5 +102,6 @@ const GroupPage = () => {
     </div>
   );
 };
+
 
 export default GroupPage;

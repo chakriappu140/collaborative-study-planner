@@ -1,10 +1,11 @@
 import express from "express"
-import {createGroup, getMyGroups} from "../controllers/groupController.js"
-import {protect} from "../middleware/authMiddleware.js"
+import { createGroup, getMyGroups, deleteGroup } from "../controllers/groupController.js" 
+import { protect } from "../middleware/authMiddleware.js"
 
-const router = express.Router()
+const router = express.Router();
 
-router.route('/').post(protect, createGroup)
-router.route('/my-groups').get(protect, getMyGroups)
+router.route('/').post(protect, createGroup);
+router.route('/my-groups').get(protect, getMyGroups);
+router.route("/:groupId").delete(protect, deleteGroup)
 
 export default router;

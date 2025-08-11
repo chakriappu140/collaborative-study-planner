@@ -6,8 +6,10 @@ import { SocketProvider } from './context/SocketContext.jsx'; // Import the prov
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <SocketProvider>
-      <App />
-    </SocketProvider>
+    <AuthProvider>
+      <SocketProvider>
+        <App />
+      </SocketProvider>
+    </AuthProvider>
   </React.StrictMode>
 );
