@@ -5,7 +5,7 @@ import CreateGroupModal from "../components/CreateGroupModal.jsx"
 import {Link} from "react-router-dom"
 
 const Dashboard = () => {
-    const {user, logout} = useAuth()
+    const {user, logout, axiosInstance} = useAuth() // <-- The fix is here
     const navigate = useNavigate()
     const [groups, setGroups] = useState([])
     const [isModalOpen, setIsModalOpen] = useState(false)
