@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useSocket } from '../context/SocketContext.jsx'; // Import the socket hook
 import TaskBoard from '../components/TaskBoard.jsx';
 import CalendarView from '../components/CalendarView.jsx';
+import AddMemberModal from "../components/AddMemberModal.jsx"
 
 const GroupPage = () => {
   const { groupId } = useParams();
@@ -12,6 +13,7 @@ const GroupPage = () => {
   const socket = useSocket(); // Use the socket hook
   const [group, setGroup] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false)
 
   useEffect(() => {
     const fetchGroupDetails = async () => {
@@ -40,12 +42,20 @@ const GroupPage = () => {
           navigate("/dashboard")
         }
       })
+
+      socket.on("group:member_added", ({group: updatedGroup}) => {
+        setGroup(prevGroup => ({
+          ...prevGroup,
+          members: updatedGroup.members
+        }))
+      })
     }
 
     return () => {
       if (socket) {
         socket.emit('leaveGroup', groupId);
         socket.off("group:deleted")
+        socket.off("group:member_added")
       }
     };
   }, [groupId, axiosInstance, navigate, socket]);
@@ -83,12 +93,20 @@ const GroupPage = () => {
               Back to Dashboard
             </button>
             {isUserAdmin && (
-              <button
-                onClick={handleDeleteGroup} // <-- NEW onClick handler
-                className="px-4 py-2 bg-red-600 rounded hover:bg-red-700 transition-colors" // <-- Changed color to red
-              >
-                Delete Group
-              </button>
+                <>
+                    <button
+                        onClick={() => setIsAddMemberModalOpen(true)} // <-- NEW ONCLICK HANDLER
+                        className="px-4 py-2 bg-green-600 rounded hover:bg-green-700 transition-colors"
+                    >
+                        Add Member
+                    </button>
+                    <button
+                        onClick={handleDeleteGroup}
+                        className="px-4 py-2 bg-red-600 rounded hover:bg-red-700 transition-colors"
+                    >
+                        Delete Group
+                    </button>
+                </>
             )}
           </div>
         </div>
@@ -99,6 +117,13 @@ const GroupPage = () => {
           <CalendarView groupId={groupId} />
         </div>
       </div>
+      {isAddMemberModalOpen && (
+        <AddMemberModal
+            groupId={groupId}
+            onClose={() => setIsAddMemberModalOpen(false)}
+            onMemberAdded={(updatedGroup) => setGroup(updatedGroup)}
+        />
+      )}
     </div>
   );
 };
