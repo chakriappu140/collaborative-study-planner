@@ -78,7 +78,7 @@ const GroupPage = () => {
     return <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">Group not found.</div>;
   }
   
-  const isUserAdmin = group.admin === user._id;
+  const isUserAdmin = group.admin.toString() === user._id;
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-8">
