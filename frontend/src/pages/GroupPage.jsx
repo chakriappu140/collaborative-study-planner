@@ -6,6 +6,7 @@ import { useSocket } from '../context/SocketContext.jsx';
 import TaskBoard from '../components/TaskBoard.jsx';
 import CalendarView from '../components/CalendarView.jsx';
 import AddMemberModal from '../components/AddMemberModal.jsx';
+import ChatWindow from '../components/ChatWindow.jsx'; // <-- NEW IMPORT
 
 const GroupPage = () => {
   const { groupId } = useParams();
@@ -78,7 +79,6 @@ const GroupPage = () => {
     return <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">Group not found.</div>;
   }
   
-  // FIX: Use user._id and ensure it's a string comparison
   const isUserAdmin = user && group.admin.toString() === user._id;
 
   return (
@@ -113,9 +113,10 @@ const GroupPage = () => {
         </div>
         <p className="text-gray-400 mb-8">{group.description}</p>
         
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8"> {/* <-- UPDATED GRID LAYOUT */}
           <TaskBoard groupId={groupId} members={group.members} />
           <CalendarView groupId={groupId} />
+          <ChatWindow groupId={groupId} /> {/* <-- NEW CHAT COMPONENT */}
         </div>
       </div>
       {isAddMemberModalOpen && (
