@@ -35,7 +35,7 @@ export const AuthProvider = ({children}) => {
 
     const login = async (credentials) => {
         try {
-            const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/users`, credentials)
+            const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/users/login`, credentials)
             localStorage.setItem('token', res.data.token)
             setUser(jwtDecode(res.data.token))
             axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`
