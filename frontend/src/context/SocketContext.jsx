@@ -1,34 +1,34 @@
-import React, {createContext, useContext, useEffect, useState} from "react"
-import {io} from "socket.io-client"
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { io } from 'socket.io-client';
 
-const SocketContext = createContext()
+const SocketContext = createContext();
 
-export const useSocket = () => useContext(SocketContext)
+export const useSocket = () => useContext(SocketContext);
 
-export const SocketProvider = ({children}) => {
-    const[socket, setSocket] = useState(null)
+export const SocketProvider = ({ children }) => {
+  const [socket, setSocket] = useState(null);
 
-    useEffect(() => {
-        const newSocket = io(import.meta.env.VITE_API_BASE_URL)
+  useEffect(() => {
+    const newSocket = io(import.meta.env.VITE_API_BASE_URL);
 
-        newSocket.on("connect", () => {
-            console.log("🔗 Connected to socket.io server")
-        })
+    newSocket.on('connect', () => {
+      console.log('🔗 Connected to Socket.IO server');
+    });
 
-        newSocket.on("disconnect", () => {
-            console.log("Disconnected from socket.io server")
-        })
+    newSocket.on('disconnect', () => {
+      console.log('Disconnected from Socket.IO server');
+    });
 
-        setSocket(newSocket)
+    setSocket(newSocket);
 
-        return () => {
-            newSocket.disconnect()
-        }
-    }, [])
+    return () => {
+      newSocket.disconnect();
+    };
+  }, []);
 
-    return (
-        <SocketContext.Provider value={socket}>
-            {children}
-        </SocketContext.Provider>
-    )
-}
+  return (
+    <SocketContext.Provider value={socket}>
+      {children}
+    </SocketContext.Provider>
+  );
+};
