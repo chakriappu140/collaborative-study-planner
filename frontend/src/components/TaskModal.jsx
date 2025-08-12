@@ -4,7 +4,7 @@ import {FaSave, FaTrash, FaTimes} from "react-icons/fa"
 
 const TaskModal = ({task, members, onClose, onUpdate, onDelete}) => {
     const [title, setTitle] = useState(task.title)
-    cosnt [description, setDescription] = useState(task.description || "")
+    const [description, setDescription] = useState(task.description || "")
     const [dueDate, setDueDate] = useState(task.dueDate ? moment(task.dueDate).format("YYYY-MM-DDTHH:mm") : "")
     const [assignedTo, setAssignedTo] = useState(task.assignedTo?._id || "")
 
