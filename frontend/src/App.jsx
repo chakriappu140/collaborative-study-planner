@@ -4,6 +4,8 @@ import LoginPage from "./pages/LoginPage.jsx"
 import SignupPage from "./pages/SignupPage.jsx"
 import Dashboard from "./pages/Dashboard.jsx"
 import GroupPage from "./pages/GroupPage.jsx"
+import InvitePage from "./pages/InvitePage.jsx"
+import {SocketProvider} from "./context/SocketContext.jsx"
 
 const PrivateRoute = ({children}) => {
   const {user, loading} = useAuth()
@@ -11,6 +13,19 @@ const PrivateRoute = ({children}) => {
     return <div className="text-white text-center">Loading...</div>
   }
   return user ? children : <Navigate to="/login"/>
+}
+
+const InviteRoute = ({children}) => {
+  const {user, loading} = useAuth();
+  if(loading) return <div className="text-white text-center">Loading...</div>;
+  
+  if (user) {
+    return children;
+  } else {
+    // If user is not logged in, redirect to login page. The login page can
+    // then redirect back here after a successful login.
+    return <Navigate to="/login" state={{ from: window.location.pathname }} />;
+  }
 }
 
 function App() {

@@ -7,6 +7,7 @@ import TaskBoard from '../components/TaskBoard.jsx';
 import CalendarView from '../components/CalendarView.jsx';
 import AddMemberModal from '../components/AddMemberModal.jsx';
 import ChatWindow from '../components/ChatWindow.jsx'; // <-- NEW IMPORT
+import InviteModal from "../components/InviteModal.jsx"
 
 const GroupPage = () => {
   const { groupId } = useParams();
@@ -16,6 +17,7 @@ const GroupPage = () => {
   const [group, setGroup] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
 
   useEffect(() => {
     const fetchGroupDetails = async () => {
@@ -82,52 +84,64 @@ const GroupPage = () => {
   const isUserAdmin = user && group.admin.toString() === user._id;
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-8">
-      <div className="w-full max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-4xl font-bold">{group.name}</h1>
-          <div className="flex space-x-2">
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="px-4 py-2 bg-indigo-600 rounded hover:bg-indigo-700 transition-colors"
-            >
-              Back to Dashboard
-            </button>
-            {isUserAdmin && (
-                <>
-                    <button
-                        onClick={() => setIsAddMemberModalOpen(true)}
-                        className="px-4 py-2 bg-green-600 rounded hover:bg-green-700 transition-colors"
-                    >
-                        Add Member
-                    </button>
-                    <button
-                        onClick={handleDeleteGroup}
-                        className="px-4 py-2 bg-red-600 rounded hover:bg-red-700 transition-colors"
-                    >
-                        Delete Group
-                    </button>
-                </>
+        <div className="min-h-screen bg-gray-900 text-white p-8">
+            <div className="w-full max-w-6xl mx-auto">
+                <div className="flex justify-between items-center mb-6">
+                    <h1 className="text-4xl font-bold">{group.name}</h1>
+                    <div className="flex space-x-2">
+                        <button
+                            onClick={() => navigate('/dashboard')}
+                            className="px-4 py-2 bg-indigo-600 rounded hover:bg-indigo-700 transition-colors"
+                        >
+                            Back to Dashboard
+                        </button>
+                        {isUserAdmin && (
+                            <>
+                                <button
+                                    onClick={() => setIsInviteModalOpen(true)} // <-- NEW ONCLICK HANDLER
+                                    className="px-4 py-2 bg-sky-600 rounded hover:bg-sky-700 transition-colors" // <-- NEW BUTTON
+                                >
+                                    Invite Member
+                                </button>
+                                <button
+                                    onClick={() => setIsAddMemberModalOpen(true)}
+                                    className="px-4 py-2 bg-green-600 rounded hover:bg-green-700 transition-colors"
+                                >
+                                    Add Member
+                                </button>
+                                <button
+                                    onClick={handleDeleteGroup}
+                                    className="px-4 py-2 bg-red-600 rounded hover:bg-red-700 transition-colors"
+                                >
+                                    Delete Group
+                                </button>
+                            </>
+                        )}
+                    </div>
+                </div>
+                <p className="text-gray-400 mb-8">{group.description}</p>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <TaskBoard groupId={groupId} members={group.members} />
+                    <CalendarView groupId={groupId} />
+                    <ChatWindow groupId={groupId} />
+                </div>
+            </div>
+            {isAddMemberModalOpen && (
+                <AddMemberModal
+                    groupId={groupId}
+                    onClose={() => setIsAddMemberModalOpen(false)}
+                    onMemberAdded={(updatedGroup) => setGroup(updatedGroup)}
+                />
             )}
-          </div>
+            {isInviteModalOpen && (
+                <InviteModal // <-- NEW MODAL COMPONENT
+                    groupId={groupId}
+                    onClose={() => setIsInviteModalOpen(false)}
+                />
+            )}
         </div>
-        <p className="text-gray-400 mb-8">{group.description}</p>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8"> {/* <-- UPDATED GRID LAYOUT */}
-          <TaskBoard groupId={groupId} members={group.members} />
-          <CalendarView groupId={groupId} />
-          <ChatWindow groupId={groupId} /> {/* <-- NEW CHAT COMPONENT */}
-        </div>
-      </div>
-      {isAddMemberModalOpen && (
-        <AddMemberModal
-            groupId={groupId}
-            onClose={() => setIsAddMemberModalOpen(false)}
-            onMemberAdded={(updatedGroup) => setGroup(updatedGroup)}
-        />
-      )}
-    </div>
-  );
+    );
 };
 
 export default GroupPage;

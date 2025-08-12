@@ -1,3 +1,4 @@
+// backend/models/Group.js
 import mongoose from "mongoose"
 
 const groupSchema = mongoose.Schema({
@@ -17,7 +18,9 @@ const groupSchema = mongoose.Schema({
     admin: {
         type: mongoose.Schema.Types.ObjectId,
         required: true
-    }
+    },
+    inviteToken: String, // <-- NEW FIELD
+    inviteTokenExpires: Date // <-- NEW FIELD
 }, {timestamps: true})
 
 const Group = mongoose.model('Group', groupSchema)
