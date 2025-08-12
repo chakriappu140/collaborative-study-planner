@@ -11,11 +11,13 @@ const InvitePage = () => {
     const socket = useSocket()
     const [message, setMessage] = useState("Joining group...")
     const [error, setError] = useState(null)
+    const [loading, setLoading] = useState(true)
 
     useEffect(() => {
         const joinGroup = async () => {
             if(!user){
-                navigate(`/login?redirect=/invite/${token}`)
+                localStorage.setItem("pendingInviteToken", token)
+                navigate("/login")
                 return
             }
 
@@ -34,6 +36,8 @@ const InvitePage = () => {
                 setError(error.response?.data?.message || "Failed to join group.")
                 setMessage("Failed to join group.")
                 setTimeout(() => navigate("/dashboard"), 3000)
+            }finally{
+                setLoading(false)
             }
         }
         if(token){

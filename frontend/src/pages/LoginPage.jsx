@@ -13,7 +13,14 @@ const LoginPage = () => {
         e.preventDefault()
         try {
             await login({email, password})
-            navigate("/dashboard")
+
+            const pendingInviteToken = localStorage.getItem("pendingInviteToken")
+            if(pendingInviteToken){
+                localStorage.removeItem("pendingInviteToken")
+                navigate(`/invite/${pendingInviteToken}`)
+            }else{
+                navigate("/dashboard")
+            }
         } catch (error) {
             setError(error.message)
         }
