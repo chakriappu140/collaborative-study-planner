@@ -1,45 +1,24 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
-import axios from "axios"; // <-- NEW IMPORT
 
 const LoginPage = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState(null);
     const navigate = useNavigate();
-    const { login } = useAuth(); // Removed axiosInstance from useAuth
+    const { login } = useAuth();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            // First, perform the login to get a new token
             await login({ email, password });
 
             const pendingInviteToken = localStorage.getItem("pendingInviteToken");
             if (pendingInviteToken) {
-                // If an invite token exists, we'll try to join the group
                 localStorage.removeItem("pendingInviteToken");
-
-                try {
-                    // Create a new axios instance with the freshly acquired token
-                    const token = localStorage.getItem('token');
-                    const authAxios = axios.create({
-                        baseURL: import.meta.env.VITE_API_BASE_URL,
-                        headers: {
-                            'Authorization': `Bearer ${token}`
-                        }
-                    });
-
-                    const res = await authAxios.post(`/api/groups/join/${pendingInviteToken}`);
-                    alert(res.data.message);
-                    navigate(`/groups/${res.data.group._id}`);
-                } catch (inviteError) {
-                    alert(inviteError.response?.data?.message || "Failed to join group after login.");
-                    navigate("/dashboard");
-                }
+                navigate(`/invite/${pendingInviteToken}`);
             } else {
-                // If no invite token, proceed to the dashboard as normal
                 navigate("/dashboard");
             }
         } catch (authError) {
