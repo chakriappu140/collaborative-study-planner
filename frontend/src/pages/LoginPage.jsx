@@ -1,34 +1,45 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
+import axios from "axios"; // <-- NEW IMPORT
 
 const LoginPage = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState(null);
     const navigate = useNavigate();
-    const { login, axiosInstance } = useAuth(); // <-- Added axiosInstance here
+    const { login } = useAuth(); // Removed axiosInstance from useAuth
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
+            // First, perform the login to get a new token
             await login({ email, password });
 
             const pendingInviteToken = localStorage.getItem("pendingInviteToken");
             if (pendingInviteToken) {
+                // If an invite token exists, we'll try to join the group
                 localStorage.removeItem("pendingInviteToken");
-                
+
                 try {
-                    // Try to join the group directly from the login page
-                    const res = await axiosInstance.post(`/api/groups/join/${pendingInviteToken}`);
+                    // Create a new axios instance with the freshly acquired token
+                    const token = localStorage.getItem('token');
+                    const authAxios = axios.create({
+                        baseURL: import.meta.env.VITE_API_BASE_URL,
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+
+                    const res = await authAxios.post(`/api/groups/join/${pendingInviteToken}`);
                     alert(res.data.message);
                     navigate(`/groups/${res.data.group._id}`);
                 } catch (inviteError) {
-                    // If joining fails, show the error and redirect to dashboard
                     alert(inviteError.response?.data?.message || "Failed to join group after login.");
                     navigate("/dashboard");
                 }
             } else {
+                // If no invite token, proceed to the dashboard as normal
                 navigate("/dashboard");
             }
         } catch (authError) {
