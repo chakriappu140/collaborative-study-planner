@@ -17,7 +17,7 @@ const JoinGroupModal = ({ onClose, initialToken }) => {
         
         let tokenToJoin = null;
         
-        // Try to parse the URL and extract the token
+        // This is the key logic change. It will parse the full URL.
         try {
             const url = new URL(link);
             const pathSegments = url.pathname.split('/');
@@ -27,7 +27,7 @@ const JoinGroupModal = ({ onClose, initialToken }) => {
                 throw new Error("Invalid invite link format.");
             }
         } catch (urlError) {
-            // If it's not a valid URL, assume the user just pasted the token
+            // If parsing fails, it's likely a raw token, so we'll use it directly.
             tokenToJoin = link;
         }
 
@@ -35,6 +35,7 @@ const JoinGroupModal = ({ onClose, initialToken }) => {
             const res = await axiosInstance.post(`/api/groups/join/${tokenToJoin}`);
             alert(res.data.message);
             // After successful join, redirect to the new group's page
+            onClose(); // Close the modal first
             navigate(`/groups/${res.data.group._id}`);
         } catch (err) {
             setError(err.response?.data?.message || "Failed to join group.");
