@@ -1,67 +1,39 @@
-import React, {useEffect, useState} from "react"
-import {useParams, useNavigate} from "react-router-dom"
-import {useAuth} from "../context/AuthContext.jsx"
-import {useSocket} from "../context/SocketContext.jsx"
-import {FaSpinner} from "react-icons/fa"
+import React, { useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext.jsx";
+import { FaSpinner } from "react-icons/fa";
 
 const InvitePage = () => {
-    const {token} = useParams()
-    const navigate = useNavigate()
-    const {axiosInstance, user} = useAuth()
-    const socket = useSocket()
-    const [message, setMessage] = useState("Joining group...")
-    const [error, setError] = useState(null)
-    const [loading, setLoading] = useState(true)
+    const { token } = useParams();
+    const navigate = useNavigate();
+    const { user } = useAuth(); // Removed axiosInstance and socket as they are no longer needed here.
 
     useEffect(() => {
-        const joinGroup = async () => {
-            if(!user){
-                localStorage.setItem("pendingInviteToken", token)
-                navigate("/login")
-                return
-            }
-
-            try {
-                const res = await axiosInstance.post(`/api/groups/join/${token}`)
-                setMessage(res.data.message)
-
-                if(socket){
-                    socket.emit("joinGroup", res.data.group._id)
-                }
-
-                setTimeout(() => {
-                    navigate(`/groups/${res.data.group._id}`)
-                }, 2000)
-            } catch (error) {
-                setError(error.response?.data?.message || "Failed to join group.")
-                setMessage("Failed to join group.")
-                setTimeout(() => navigate("/dashboard"), 3000)
-            }finally{
-                setLoading(false)
-            }
+        // This useEffect now only handles the initial logic.
+        if (user) {
+            // If the user is already logged in, they can't join again this way.
+            // A more complex app would handle this, but for now we'll send them to dashboard.
+            // The LoginPage handles the join process for unauthenticated users.
+            navigate("/dashboard");
+        } else if (token) {
+            // If no user and a token exists, store it and redirect to login.
+            localStorage.setItem("pendingInviteToken", token);
+            navigate("/login");
         }
-        if(token){
-            joinGroup()
-        }
-    }, [token, user, navigate, axiosInstance, socket])
+    }, [user, token, navigate]);
 
+    // The component now only displays a loading state as the redirects happen quickly.
     return (
         <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center p-8">
             <div className="bg-gray-800 p-8 rounded-lg shadow-lg text-center">
                 <h2 className="text-3xl font-bold mb-4">Group Invitation</h2>
-                {loading ? (
-                    <div className="flex items-center justify-center space-x-2 text-gray-400">
-                        <FaSpinner className="animate-spin"/>
-                        <p>{message}</p>
-                    </div>
-                ) : error ? (
-                    <p className="text-red-500">{error}</p>
-                ) : (
-                    <p className="text-green-500">{message}</p>
-                )}
+                <div className="flex items-center justify-center space-x-2 text-gray-400">
+                    <FaSpinner className="animate-spin" />
+                    <p>Redirecting...</p>
+                </div>
             </div>
         </div>
-    )
-}
+    );
+};
 
-export default InvitePage
+export default InvitePage;
