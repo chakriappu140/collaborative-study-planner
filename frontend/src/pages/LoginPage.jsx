@@ -13,14 +13,9 @@ const LoginPage = () => {
         e.preventDefault();
         try {
             await login({ email, password });
-
-            const pendingInviteToken = localStorage.getItem("pendingInviteToken");
-            if (pendingInviteToken) {
-                localStorage.removeItem("pendingInviteToken");
-                navigate(`/invite/${pendingInviteToken}`);
-            } else {
-                navigate("/dashboard");
-            }
+            // Simply navigate to the dashboard after a successful login.
+            // The dashboard will handle the rest.
+            navigate("/dashboard");
         } catch (authError) {
             setError(authError.message);
         }
@@ -55,7 +50,7 @@ const LoginPage = () => {
                     Login
                 </button>
                 <p className="mt-4 text-center text-gray-400">
-                    Don't have an account? <a href="/signup" className="text-indigo-400 hover:underline">Sign up</a>
+                        Don't have an account? <a href="/signup" className="text-indigo-400 hover:underline">Sign up</a>
                 </p>
             </form>
         </div>

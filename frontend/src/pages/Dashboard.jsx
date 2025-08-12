@@ -2,13 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useNavigate, Link } from 'react-router-dom';
 import CreateGroupModal from '../components/CreateGroupModal.jsx';
+import JoinGroupModal from '../components/JoinGroupModal.jsx'; // NEW IMPORT
 
 const Dashboard = () => {
-    const { user, logout, axiosInstance } = useAuth(); // <-- FIX: Add axiosInstance here
+    const { user, logout, axiosInstance } = useAuth();
     const navigate = useNavigate();
     const [groups, setGroups] = useState([]);
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [isJoinModalOpen, setIsJoinModalOpen] = useState(false); // NEW STATE
     const [loadingGroups, setLoadingGroups] = useState(true);
+    const [initialInviteToken, setInitialInviteToken] = useState(null);
 
     useEffect(() => {
         const fetchGroups = async () => {
@@ -24,8 +27,13 @@ const Dashboard = () => {
 
         if (user) {
             fetchGroups();
+            const pendingInviteToken = localStorage.getItem('pendingInviteToken');
+            if (pendingInviteToken) {
+                setInitialInviteToken(pendingInviteToken);
+                setIsJoinModalOpen(true);
+            }
         }
-    }, [user, axiosInstance]); // <-- FIX: Add axiosInstance to the dependency array
+    }, [user, axiosInstance]);
 
     const handleLogout = () => {
         logout();
@@ -51,12 +59,20 @@ const Dashboard = () => {
             <div className="w-full max-w-4xl mb-8">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-2xl font-semibold">My Groups</h2>
-                    <button
-                        onClick={() => setIsModalOpen(true)}
-                        className="px-4 py-2 text-white bg-green-600 rounded hover:bg-green-700 transition-colors"
-                    >
-                        Create New Group
-                    </button>
+                    <div className="flex space-x-2">
+                        <button
+                            onClick={() => setIsJoinModalOpen(true)} // NEW BUTTON
+                            className="px-4 py-2 text-white bg-indigo-600 rounded hover:bg-indigo-700 transition-colors"
+                        >
+                            Join Group
+                        </button>
+                        <button
+                            onClick={() => setIsCreateModalOpen(true)}
+                            className="px-4 py-2 text-white bg-green-600 rounded hover:bg-green-700 transition-colors"
+                        >
+                            Create New Group
+                        </button>
+                    </div>
                 </div>
                 {loadingGroups ? (
                     <p>Loading groups...</p>
@@ -76,10 +92,19 @@ const Dashboard = () => {
                     </div>
                 )}
             </div>
-            {isModalOpen && (
+            {isCreateModalOpen && (
                 <CreateGroupModal
-                    onClose={() => setIsModalOpen(false)}
+                    onClose={() => setIsCreateModalOpen(false)}
                     onGroupCreated={handleGroupCreated}
+                />
+            )}
+            {isJoinModalOpen && (
+                <JoinGroupModal // NEW MODAL
+                    onClose={() => {
+                        setIsJoinModalOpen(false);
+                        localStorage.removeItem('pendingInviteToken'); // Clean up token
+                    }}
+                    initialToken={initialInviteToken}
                 />
             )}
         </div>
