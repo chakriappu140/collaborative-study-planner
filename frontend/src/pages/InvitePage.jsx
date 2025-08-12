@@ -47,7 +47,6 @@ const InvitePage = () => {
         if (token) {
             processInvite();
         } else {
-            // No token, invalid link
             setError("Invalid invitation link.");
             setMessage("Invalid invitation link.");
             setLoading(false);
