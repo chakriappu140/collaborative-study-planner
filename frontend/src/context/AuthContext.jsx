@@ -1,4 +1,3 @@
-// frontend/src/context/AuthContext.jsx
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
@@ -28,8 +27,8 @@ export const AuthProvider = ({ children }) => {
       try {
         const decoded = jwtDecode(token);
         if (decoded.exp * 1000 > Date.now()) {
-          // Use decoded.id for consistency with your backend token generation
-          setUser({ _id: decoded.id, name: decoded.name, email: decoded.email }); 
+          // Use decoded.id, decoded.name, and decoded.email to set user state
+          setUser({ _id: decoded.id, name: decoded.name, email: decoded.email });
         } else {
           localStorage.removeItem('token');
         }
@@ -46,8 +45,6 @@ export const AuthProvider = ({ children }) => {
       const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/users/login`, credentials);
       localStorage.setItem('token', res.data.token);
       const decoded = jwtDecode(res.data.token);
-      // The JWT payload typically has 'id', while the user object has '_id'.
-      // We will normalize this to use '_id' everywhere.
       setUser({ _id: decoded.id, name: res.data.name, email: res.data.email });
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Login failed.');

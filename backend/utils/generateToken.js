@@ -1,7 +1,8 @@
 import jwt from "jsonwebtoken"
 
-const generateToken = (id) => {
-    return jwt.sign({id}, process.env.JWT_SECRET, {
+// The payload now includes the user's name and email
+const generateToken = (id, name, email) => {
+    return jwt.sign({ id, name, email }, process.env.JWT_SECRET, {
         expiresIn: '30d'
     })
 }
