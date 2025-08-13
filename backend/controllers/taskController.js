@@ -1,10 +1,9 @@
-// backend/controllers/taskController.js
 import asyncHandler from 'express-async-handler';
 import Task from '../models/Task.js';
 import Group from '../models/Group.js';
-import Notification from '../models/Notification.js'; // NEW IMPORT
+import Notification from '../models/Notification.js';
 
-const createNotification = async (groupId, senderId, message, link) => {
+const createNotification = async (req, groupId, senderId, message, link) => {
     try {
         const group = await Group.findById(groupId);
         if (!group) return;
@@ -17,16 +16,21 @@ const createNotification = async (groupId, senderId, message, link) => {
             link
         }));
 
-        await Notification.insertMany(notifications);
+        const createdNotifications = await Notification.insertMany(notifications);
 
-        // Emit notifications to each user via their respective socket.io rooms
-        for (const memberId of membersToNotify) {
-            req.io.to(memberId.toString()).emit('notification:new', { message, link });
+        for (const notif of createdNotifications) {
+            req.io.to(notif.user.toString()).emit('notification:new', notif);
         }
     } catch (error) {
         console.error('Failed to create notification:', error);
     }
 };
+
+const getGroupTasks = asyncHandler(async (req, res) => {
+    const { groupId } = req.params;
+    const tasks = await Task.find({ group: groupId }).populate('assignedTo', 'name');
+    res.status(200).json(tasks);
+});
 
 // @desc    Create a new task in a group
 // @route   POST /api/groups/:groupId/tasks
@@ -49,11 +53,13 @@ const createTask = asyncHandler(async (req, res) => {
         dueDate,
     });
 
-    // Emit a real-time event to the group
     req.io.to(groupId).emit('task:created', task);
 
-    // Create a notification for all other group members
-    await createNotification(groupId, senderId, `A new task "${task.title}" has been created in the group.`, `/groups/${groupId}`);
+    // FIX: Get the group name before creating the notification
+    const group = await Group.findById(groupId);
+    if (group) {
+        await createNotification(req, groupId, senderId, `A new task "${task.title}" has been created in ${group.name}.`, `/groups/${groupId}`);
+    }
 
     res.status(201).json({
         message: 'Task created successfully',
@@ -81,7 +87,12 @@ const updateTask = asyncHandler(async (req, res) => {
         const updatedTask = await task.save();
 
         req.io.to(updatedTask.group.toString()).emit('task:updated', updatedTask);
-        await createNotification(groupId, senderId, `Task "${updatedTask.title}" has been updated.`, `/groups/${groupId}`);
+        
+        // FIX: Get the group name before creating the notification
+        const group = await Group.findById(groupId);
+        if (group) {
+            await createNotification(req, groupId, senderId, `Task "${updatedTask.title}" has been updated in ${group.name}.`, `/groups/${groupId}`);
+        }
 
         res.status(200).json(updatedTask);
     } else {
@@ -100,22 +111,22 @@ const deleteTask = asyncHandler(async (req, res) => {
     const task = await Task.findById(taskId);
     
     if (task) {
+        const title = task.title;
         await Task.deleteOne({ _id: taskId });
         
         req.io.to(task.group.toString()).emit('task:deleted', taskId);
-        await createNotification(groupId, senderId, `Task "${task.title}" has been deleted.`, `/groups/${groupId}`);
+        
+        // FIX: Get the group name before creating the notification
+        const group = await Group.findById(groupId);
+        if (group) {
+            await createNotification(req, groupId, senderId, `Task "${title}" has been deleted from ${group.name}.`, `/groups/${groupId}`);
+        }
 
         res.status(200).json({ message: 'Task removed' });
     } else {
         res.status(404);
         throw new Error('Task not found');
     }
-});
-
-const getGroupTasks = asyncHandler(async (req, res) => {
-    const { groupId } = req.params;
-    const tasks = await Task.find({ group: groupId }).populate('assignedTo', 'name');
-    res.status(200).json(tasks);
 });
 
 export { createTask, getGroupTasks, updateTask, deleteTask };

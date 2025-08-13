@@ -1,9 +1,8 @@
 import asyncHandler from "express-async-handler"
 import Message from "../models/Message.js"
-import Group from "../models/Group.js"; // NEW IMPORT
-import Notification from "../models/Notification.js"; // NEW IMPORT
+import Group from "../models/Group.js";
+import Notification from "../models/Notification.js";
 
-// A helper function to create a notification for all other group members
 const createNotification = async (req, groupId, senderId, message, link) => {
     try {
         const group = await Group.findById(groupId);
@@ -48,8 +47,11 @@ const sendMessage = asyncHandler(async (req, res) => {
 
     req.io.to(groupId).emit("message:new", newMessage);
     
-    // NEW: Create a notification for the message
-    await createNotification(req, groupId, sender, `${req.user.name} sent a new message in ${groupId}`, `/groups/${groupId}`);
+    // FIX: Get the group name before creating the notification
+    const group = await Group.findById(groupId);
+    if (group) {
+        await createNotification(req, groupId, sender, `${req.user.name} sent a new message in ${group.name}`, `/groups/${groupId}`);
+    }
 
 
     res.status(201).json(newMessage);
