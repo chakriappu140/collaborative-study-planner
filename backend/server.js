@@ -10,6 +10,7 @@ import taskRoutes from './routes/taskRoutes.js';
 import calendarRoutes from './routes/calendarRoutes.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 import messageRoutes from "./routes/messageRoutes.js"
+import notificationRoutes from "./routes/notificationRoutes.js"
 
 dotenv.config();
 
@@ -38,6 +39,7 @@ app.use('/api/groups', groupRoutes);
 app.use('/api/groups/:groupId/tasks', taskRoutes);
 app.use('/api/groups/:groupId/calendar', calendarRoutes);
 app.use("/api/groups/:groupId/messages", messageRoutes)
+app.use("/api/notifications", notificationRoutes)
 
 app.get('/', (req, res) => {
   res.send('API is running...');
