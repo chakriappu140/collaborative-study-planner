@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FaBell } from 'react-icons/fa';
+import { FaBell, FaTrash } from 'react-icons/fa'; // NEW IMPORT
 import { useAuth } from '../context/AuthContext.jsx';
 import { useSocket } from '../context/SocketContext.jsx';
 import { useNavigate } from 'react-router-dom';
@@ -84,6 +84,18 @@ const NotificationBell = () => {
         }
     };
 
+    // NEW: Function to delete all notifications
+    const handleClearAll = async () => {
+        if (window.confirm("Are you sure you want to delete all notifications?")) {
+            try {
+                await axiosInstance.delete('/api/notifications');
+                setNotifications([]); // Clear the state immediately
+            } catch (err) {
+                console.error("Failed to delete all notifications:", err);
+            }
+        }
+    };
+
     return (
         <div className="relative" ref={bellRef}>
             <button
@@ -99,8 +111,17 @@ const NotificationBell = () => {
             </button>
             {isOpen && (
                 <div className="absolute right-0 mt-2 w-80 bg-gray-800 rounded-lg shadow-lg max-h-96 overflow-y-auto">
-                    <div className="p-4 border-b border-gray-700">
+                    <div className="p-4 border-b border-gray-700 flex justify-between items-center">
                         <h3 className="text-lg font-bold">Notifications</h3>
+                        {notifications.length > 0 && (
+                            <button
+                                onClick={handleClearAll} // NEW BUTTON
+                                className="text-red-400 hover:text-red-600"
+                                title="Clear All Notifications"
+                            >
+                                <FaTrash />
+                            </button>
+                        )}
                     </div>
                     {notifications.length === 0 ? (
                         <p className="p-4 text-gray-400">No new notifications.</p>
