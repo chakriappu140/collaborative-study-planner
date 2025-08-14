@@ -26,9 +26,6 @@ const markNotificationAsRead = asyncHandler(async (req, res) => {
     res.status(200).json(updatedNotification)
 })
 
-// @desc    Delete all notifications for a user
-// @route   DELETE /api/notifications
-// @access  Private
 const deleteAllNotifications = asyncHandler(async (req, res) => {
     const userId = req.user._id;
     await Notification.deleteMany({ user: userId });
