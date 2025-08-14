@@ -1,9 +1,11 @@
+// backend/controllers/taskController.js
 import asyncHandler from 'express-async-handler';
 import Task from '../models/Task.js';
 import Group from '../models/Group.js';
 import Notification from '../models/Notification.js';
 
-const createNotification = async (req, groupId, senderId, message, link) => {
+// FIX: The createNotification function now accepts the `io` object
+const createNotification = async (io, groupId, senderId, message, link) => {
     try {
         const group = await Group.findById(groupId);
         if (!group) return;
@@ -19,7 +21,8 @@ const createNotification = async (req, groupId, senderId, message, link) => {
         const createdNotifications = await Notification.insertMany(notifications);
 
         for (const notif of createdNotifications) {
-            req.io.to(notif.user.toString()).emit('notification:new', notif);
+            // FIX: Use the io object to emit the notification
+            io.to(notif.user.toString()).emit('notification:new', notif);
         }
     } catch (error) {
         console.error('Failed to create notification:', error);
@@ -55,10 +58,10 @@ const createTask = asyncHandler(async (req, res) => {
 
     req.io.to(groupId).emit('task:created', task);
 
-    // FIX: Get the group name before creating the notification
     const group = await Group.findById(groupId);
     if (group) {
-        await createNotification(req, groupId, senderId, `A new task "${task.title}" has been created in ${group.name}.`, `/groups/${groupId}`);
+        // FIX: Pass req.io to the createNotification function
+        await createNotification(req.io, groupId, senderId, `A new task "${task.title}" has been created in ${group.name}.`, `/groups/${groupId}`);
     }
 
     res.status(201).json({
@@ -88,10 +91,10 @@ const updateTask = asyncHandler(async (req, res) => {
 
         req.io.to(updatedTask.group.toString()).emit('task:updated', updatedTask);
         
-        // FIX: Get the group name before creating the notification
         const group = await Group.findById(groupId);
         if (group) {
-            await createNotification(req, groupId, senderId, `Task "${updatedTask.title}" has been updated in ${group.name}.`, `/groups/${groupId}`);
+            // FIX: Pass req.io to the createNotification function
+            await createNotification(req.io, groupId, senderId, `Task "${updatedTask.title}" has been updated in ${group.name}.`, `/groups/${groupId}`);
         }
 
         res.status(200).json(updatedTask);
@@ -116,10 +119,10 @@ const deleteTask = asyncHandler(async (req, res) => {
         
         req.io.to(task.group.toString()).emit('task:deleted', taskId);
         
-        // FIX: Get the group name before creating the notification
         const group = await Group.findById(groupId);
         if (group) {
-            await createNotification(req, groupId, senderId, `Task "${title}" has been deleted from ${group.name}.`, `/groups/${groupId}`);
+            // FIX: Pass req.io to the createNotification function
+            await createNotification(req.io, groupId, senderId, `Task "${title}" has been deleted from ${group.name}.`, `/groups/${groupId}`);
         }
 
         res.status(200).json({ message: 'Task removed' });

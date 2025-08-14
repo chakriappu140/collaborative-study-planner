@@ -1,10 +1,11 @@
+// backend/controllers/calendarController.js
 import asyncHandler from "express-async-handler"
 import CalendarEvent from "../models/CalendarEvent.js"
 import Group from "../models/Group.js"
-import Notification from "../models/Notification.js"; // NEW IMPORT
+import Notification from "../models/Notification.js";
 
-// The same createNotification helper from taskController and messageController.
-const createNotification = async (req, groupId, senderId, message, link) => {
+// FIX: The createNotification function now accepts the `io` object
+const createNotification = async (io, groupId, senderId, message, link) => {
     try {
         const group = await Group.findById(groupId);
         if (!group) return;
@@ -20,7 +21,8 @@ const createNotification = async (req, groupId, senderId, message, link) => {
         const createdNotifications = await Notification.insertMany(notifications);
 
         for (const notif of createdNotifications) {
-            req.io.to(notif.user.toString()).emit('notification:new', notif);
+            // FIX: Use the io object to emit the notification
+            io.to(notif.user.toString()).emit('notification:new', notif);
         }
     } catch (error) {
         console.error('Failed to create notification:', error);
@@ -47,10 +49,10 @@ const createCalendarEvent = asyncHandler(async (req, res) => {
 
     req.io.to(groupId).emit("event:created", newEvent)
 
-    // NEW: Create notification for new event
     const group = await Group.findById(groupId);
     if(group) {
-        await createNotification(req, groupId, senderId, `${req.user.name} created a new event: "${title}" in ${group.name}`, `/groups/${groupId}`);
+        // FIX: Pass req.io to the createNotification function
+        await createNotification(req.io, groupId, senderId, `${req.user.name} created a new event: "${title}" in ${group.name}`, `/groups/${groupId}`);
     }
 
     res.status(201).json({
@@ -94,9 +96,9 @@ const updateCalendarEvent = asyncHandler(async (req, res) => {
 
     req.io.to(event.group.toString()).emit("event:updated", updatedEvent);
 
-    // NEW: Create notification for updated event
     if(group) {
-        await createNotification(req, groupId, senderId, `${req.user.name} updated the event "${title}" in ${group.name}`, `/groups/${groupId}`);
+        // FIX: Pass req.io to the createNotification function
+        await createNotification(req.io, groupId, senderId, `${req.user.name} updated the event "${title}" in ${group.name}`, `/groups/${groupId}`);
     }
 
     res.status(200).json(updatedEvent);
@@ -121,14 +123,14 @@ const deleteCalendarEvent = asyncHandler(async (req, res) => {
         throw new Error("User not authorized to delete this event");
     }
 
-    const title = event.title; // Get title before deletion
+    const title = event.title;
     await CalendarEvent.deleteOne({ _id: eventId });
 
     req.io.to(event.group.toString()).emit("event:deleted", eventId);
 
-    // NEW: Create notification for deleted event
     if(group) {
-        await createNotification(req, groupId, senderId, `${req.user.name} deleted the event "${title}" from ${group.name}`, `/groups/${groupId}`);
+        // FIX: Pass req.io to the createNotification function
+        await createNotification(req.io, groupId, senderId, `${req.user.name} deleted the event "${title}" from ${group.name}`, `/groups/${groupId}`);
     }
 
     res.status(200).json({ message: "Event removed" });
