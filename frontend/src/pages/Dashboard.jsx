@@ -4,8 +4,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import CreateGroupModal from '../components/CreateGroupModal.jsx';
 import JoinGroupModal from '../components/JoinGroupModal.jsx';
 import NotificationBell from '../components/NotificationBell.jsx';
-import DirectMessagesModal from '../components/DirectMessagesModal.jsx'; // NEW IMPORT
-import { FaUserCircle, FaPaperPlane } from 'react-icons/fa'; // UPDATED IMPORT
+import DirectMessagesModal from '../components/DirectMessagesModal.jsx';
+import { FaUserCircle, FaPaperPlane } from 'react-icons/fa';
 
 const Dashboard = () => {
     const { user, logout, axiosInstance } = useAuth();
@@ -13,7 +13,7 @@ const Dashboard = () => {
     const [groups, setGroups] = useState([]);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
-    const [isDMsModalOpen, setIsDMsModalOpen] = useState(false); // NEW STATE
+    const [isDMsModalOpen, setIsDMsModalOpen] = useState(false);
     const [loadingGroups, setLoadingGroups] = useState(true);
     const [initialInviteToken, setInitialInviteToken] = useState(null);
 
@@ -58,7 +58,7 @@ const Dashboard = () => {
                         <FaUserCircle className="w-5 h-5" />
                     </Link>
                     <button
-                        onClick={() => setIsDMsModalOpen(true)} // NEW BUTTON
+                        onClick={() => setIsDMsModalOpen(true)}
                         className="p-2 rounded-full text-white bg-gray-700 hover:bg-gray-600 transition-colors"
                         title="Direct Messages"
                     >
