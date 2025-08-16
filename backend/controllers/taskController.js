@@ -2,6 +2,7 @@ import asyncHandler from 'express-async-handler';
 import Task from '../models/Task.js';
 import Group from '../models/Group.js';
 import Notification from '../models/Notification.js';
+import mongoose from 'mongoose'; // <-- NEW IMPORT
 
 const createNotification = async (req, groupId, senderId, message, link) => {
     try {
