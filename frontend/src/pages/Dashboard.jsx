@@ -3,7 +3,8 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useNavigate, Link } from 'react-router-dom';
 import CreateGroupModal from '../components/CreateGroupModal.jsx';
 import JoinGroupModal from '../components/JoinGroupModal.jsx';
-import NotificationBell from '../components/NotificationBell.jsx'; // NEW IMPORT
+import NotificationBell from '../components/NotificationBell.jsx';
+import { FaUserCircle } from 'react-icons/fa'; // NEW IMPORT
 
 const Dashboard = () => {
     const { user, logout, axiosInstance } = useAuth();
@@ -50,7 +51,10 @@ const Dashboard = () => {
             <div className="w-full max-w-4xl flex justify-between items-center mb-8">
                 <h1 className="text-4xl font-bold">Welcome, {user?.name}!</h1>
                 <div className="flex space-x-4 items-center">
-                    <NotificationBell /> {/* NEW COMPONENT */}
+                    <NotificationBell />
+                    <Link to="/profile" className="p-2 rounded-full text-white bg-gray-700 hover:bg-gray-600 transition-colors">
+                        <FaUserCircle className="w-5 h-5" />
+                    </Link>
                     <button
                         onClick={handleLogout}
                         className="px-4 py-2 text-white bg-red-600 rounded hover:bg-red-700 transition-colors"

@@ -1,30 +1,33 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
-import LoginPage from "./pages/LoginPage.jsx";
-import SignupPage from "./pages/SignupPage.jsx";
-import Dashboard from "./pages/Dashboard.jsx";
-import GroupPage from "./pages/GroupPage.jsx";
-import InvitePage from "./pages/InvitePage.jsx"; // <-- Correct import
-import { SocketProvider } from "./context/SocketContext.jsx";
+import {BrowserRouter as Router, Routes, Route, Navigate} from "react-router-dom"
+import {AuthProvider, useAuth} from "./context/AuthContext.jsx"
+import LoginPage from "./pages/LoginPage.jsx"
+import SignupPage from "./pages/SignupPage.jsx"
+import Dashboard from "./pages/Dashboard.jsx"
+import GroupPage from "./pages/GroupPage.jsx"
+import InvitePage from "./pages/InvitePage.jsx"
+import ProfilePage from "./pages/ProfilePage.jsx" // NEW IMPORT
+import {SocketProvider} from "./context/SocketContext.jsx"
 
-const PrivateRoute = ({ children }) => {
-  const { user, loading } = useAuth();
-  if (loading) {
-    return <div className="text-white text-center">Loading...</div>;
+const PrivateRoute = ({children}) => {
+  const {user, loading} = useAuth()
+  if(loading){
+    return <div className="text-white text-center">Loading...</div>
   }
-  return user ? children : <Navigate to="/login" />;
-};
+  return user ? children : <Navigate to="/login"/>
+}
 
-const InviteRoute = ({ children }) => {
-  const { user, loading } = useAuth();
-  if (loading) return <div className="text-white text-center">Loading...</div>;
-
+const InviteRoute = ({children}) => {
+  const {user, loading} = useAuth();
+  if(loading) return <div className="text-white text-center">Loading...</div>;
+  
   if (user) {
     return children;
   } else {
+    // If user is not logged in, redirect to login page. The login page can
+    // then redirect back here after a successful login.
     return <Navigate to="/login" state={{ from: window.location.pathname }} />;
   }
-};
+}
 
 function App() {
   return (
@@ -32,14 +35,14 @@ function App() {
       <SocketProvider>
         <Router>
           <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/signup" element={<SignupPage />} />
-            <Route path="/" element={<Navigate to="/dashboard" />} />
+            <Route path="/login" element={<LoginPage/>}/>
+            <Route path="/signup" element={<SignupPage/>}/>
+            <Route path="/" element={<Navigate to="/dashboard"/>}/>
             <Route
               path="/dashboard"
               element={
                 <PrivateRoute>
-                  <Dashboard />
+                  <Dashboard/>
                 </PrivateRoute>
               }
             />
@@ -47,19 +50,23 @@ function App() {
               path="/groups/:groupId"
               element={
                 <PrivateRoute>
-                  <GroupPage />
+                  <GroupPage/>
                 </PrivateRoute>
               }
             />
-            {/* THIS WAS THE MISSING ROUTE */}
             <Route
-              path="/invite/:token"
+              path="/profile" // NEW ROUTE
               element={
-                <InviteRoute>
-                  <InvitePage />
-                </InviteRoute>
+                <PrivateRoute>
+                  <ProfilePage/>
+                </PrivateRoute>
               }
             />
+            <Route path="/invite/:token" element={
+              <InviteRoute>
+                <InvitePage />
+              </InviteRoute>
+            }/>
           </Routes>
         </Router>
       </SocketProvider>
