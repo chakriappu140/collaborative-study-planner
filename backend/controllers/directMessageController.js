@@ -1,9 +1,8 @@
 import asyncHandler from "express-async-handler";
 import DirectMessage from "../models/DirectMessage.js";
+import User from "../models/User.js";
+import Notification from "../models/Notification.js";
 
-// @desc    Send a new direct message
-// @route   POST /api/messages/direct
-// @access  Private
 const sendDirectMessage = asyncHandler(async (req, res) => {
     const { recipientId, content } = req.body;
     const { _id: senderId } = req.user;
@@ -19,23 +18,16 @@ const sendDirectMessage = asyncHandler(async (req, res) => {
         content
     });
 
-    // Populate sender details for the real-time update
     await newMessage.populate('sender', 'name');
 
-    // Emit a real-time event to the recipient's private room
-    // The recipient needs to be listening to their private room (using their user ID)
     req.io.to(recipientId.toString()).emit("dm:new", newMessage);
     
-    // Also send a notification to the recipient
-    // (This part is for a future notification feature, but we'll include it here)
-    // await createNotification(req.io, recipientId.toString(), senderId, `New message from ${req.user.name}`, `/messages/${senderId}`);
+    // You can also add a notification for the recipient here
+    // await createNotification(...)
 
     res.status(201).json(newMessage);
 });
 
-// @desc    Get conversation history with a user
-// @route   GET /api/messages/direct/:recipientId
-// @access  Private
 const getDirectMessages = asyncHandler(async (req, res) => {
     const { recipientId } = req.params;
     const { _id: userId } = req.user;
@@ -52,4 +44,43 @@ const getDirectMessages = asyncHandler(async (req, res) => {
     res.status(200).json(messages);
 });
 
-export { sendDirectMessage, getDirectMessages };
+// @desc    Mark all messages in a conversation as read
+// @route   PUT /api/messages/direct/read/:recipientId
+// @access  Private
+const markMessagesAsRead = asyncHandler(async (req, res) => {
+    const { recipientId } = req.params;
+    const { _id: userId } = req.user;
+
+    await DirectMessage.updateMany(
+        { sender: recipientId, recipient: userId, isRead: false },
+        { $set: { isRead: true } }
+    );
+
+    res.status(200).json({ message: "Messages marked as read" });
+});
+
+// @desc    Get the number of unread direct messages per user
+// @route   GET /api/messages/direct/unread-counts
+// @access  Private
+const getUnreadDMCounts = asyncHandler(async (req, res) => {
+    const { _id: userId } = req.user;
+
+    const unreadCounts = await DirectMessage.aggregate([
+        {
+            $match: {
+                recipient: userId,
+                isRead: false
+            }
+        },
+        {
+            $group: {
+                _id: "$sender",
+                count: { $sum: 1 }
+            }
+        }
+    ]);
+
+    res.status(200).json(unreadCounts);
+});
+
+export { sendDirectMessage, getDirectMessages, markMessagesAsRead, getUnreadDMCounts };

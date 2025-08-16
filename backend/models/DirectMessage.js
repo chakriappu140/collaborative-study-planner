@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose from "mongoose"
 
 const directMessageSchema = mongoose.Schema({
     sender: {
@@ -15,6 +15,10 @@ const directMessageSchema = mongoose.Schema({
         type: String,
         required: true,
         trim: true
+    },
+    isRead: { // NEW FIELD
+        type: Boolean,
+        default: false
     }
 }, { timestamps: true });
 
