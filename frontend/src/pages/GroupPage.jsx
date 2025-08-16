@@ -10,7 +10,7 @@ import InviteModal from '../components/InviteModal.jsx';
 import ManageMembersModal from '../components/ManageMembersModal.jsx';
 import FileManagement from '../components/FileManagement.jsx';
 import ProgressDashboard from '../components/ProgressDashboard.jsx';
-import MembersList from '../components/MembersList.jsx'; // NEW IMPORT
+import MembersList from '../components/MembersList.jsx';
 
 const GroupPage = () => {
     const { groupId } = useParams();
@@ -122,7 +122,7 @@ const GroupPage = () => {
                 return <FileManagement groupId={groupId} isUserAdmin={isUserAdmin} />;
             case 'progress':
                 return <ProgressDashboard groupId={groupId} />;
-            case 'members': // NEW CASE
+            case 'members':
                 return <MembersList members={group.members} />;
             default:
                 return null;
@@ -182,7 +182,7 @@ const GroupPage = () => {
                     <button onClick={() => setActiveTab('chat')} className={tabClasses('chat')}>Chat</button>
                     <button onClick={() => setActiveTab('files')} className={tabClasses('files')}>Files</button>
                     <button onClick={() => setActiveTab('progress')} className={tabClasses('progress')}>Progress</button>
-                    <button onClick={() => setActiveTab('members')} className={tabClasses('members')}>Members</button> {/* NEW TAB */}
+                    <button onClick={() => setActiveTab('members')} className={tabClasses('members')}>Members</button>
                 </div>
 
                 <div>
