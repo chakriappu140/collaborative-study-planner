@@ -208,9 +208,6 @@ const joinGroupWithToken = asyncHandler(async (req, res) => {
     res.status(200).json({ message: "Successfully joined the group", group });
 });
 
-// @desc    Remove a member from a group
-// @route   DELETE /api/groups/:groupId/members/:memberId
-// @access  Private (Admin only)
 const removeMemberFromGroup = asyncHandler(async (req, res) => {
     const { groupId, memberId } = req.params;
 
@@ -226,7 +223,6 @@ const removeMemberFromGroup = asyncHandler(async (req, res) => {
         throw new Error("User not authorized to remove members from this group");
     }
 
-    // You can't remove yourself from a group
     if (memberId.toString() === req.user._id.toString()) {
         res.status(400);
         throw new Error("You cannot remove yourself from the group");
@@ -237,12 +233,18 @@ const removeMemberFromGroup = asyncHandler(async (req, res) => {
         res.status(404);
         throw new Error("Member not found in this group");
     }
+    
+    // Get the removed member's name for the notification
+    const removedMember = await User.findById(memberId);
 
     group.members.pull(memberId);
     const updatedGroup = await group.save();
 
-    // Notify the group that a member has been removed
     req.io.to(groupId).emit("group:member_removed", { memberId, group: updatedGroup });
+
+    if (removedMember) {
+        await createNotification(req.io, groupId, req.user._id, `${removedMember.name} was removed from ${group.name} by ${req.user.name}.`, `/groups/${groupId}`);
+    }
 
     res.status(200).json({ message: "Member removed successfully", group: updatedGroup });
 });
@@ -256,5 +258,5 @@ export {
     addMemberToGroup,
     generateInviteToken,
     joinGroupWithToken,
-    removeMemberFromGroup // NEW EXPORT
+    removeMemberFromGroup
 };
