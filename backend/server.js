@@ -8,9 +8,11 @@ import userRoutes from './routes/userRoutes.js';
 import groupRoutes from './routes/groupRoutes.js';
 import taskRoutes from './routes/taskRoutes.js';
 import calendarRoutes from './routes/calendarRoutes.js';
+import messageRoutes from './routes/messageRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
+import fileRoutes from './routes/fileRoutes.js'; // NEW IMPORT
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
-import messageRoutes from "./routes/messageRoutes.js"
-import notificationRoutes from "./routes/notificationRoutes.js"
+import path from "path";
 
 dotenv.config();
 
@@ -20,54 +22,63 @@ const app = express();
 const server = http.createServer(app);
 
 const io = new Server(server, {
-  cors: {
-    origin: '*', 
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  },
+    cors: {
+        origin: '*', 
+        methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    },
 });
 
+// Middleware
 app.use(express.json());
 app.use(cors());
 
 app.use((req, res, next) => {
-  req.io = io;
-  next();
+    req.io = io;
+    next();
 });
 
+// API Routes
 app.use('/api/users', userRoutes);
 app.use('/api/groups', groupRoutes);
 app.use('/api/groups/:groupId/tasks', taskRoutes);
 app.use('/api/groups/:groupId/calendar', calendarRoutes);
-app.use("/api/groups/:groupId/messages", messageRoutes)
-app.use("/api/notifications", notificationRoutes)
+app.use("/api/groups/:groupId/messages", messageRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/groups/:groupId/files", fileRoutes); // NEW ROUTE
+
+// Serve uploaded files statically
+const __dirname = path.resolve();
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // NEW STATIC ROUTE
 
 app.get('/', (req, res) => {
-  res.send('API is running...');
+    res.send('API is running...');
 });
 
+// Error Handling Middleware
 app.use(notFound);
 app.use(errorHandler);
 
+// Socket.IO connections
 io.on('connection', (socket) => {
-  console.log('🔗 A user connected with id:', socket.id);
+    console.log('🔗 A user connected with id:', socket.id);
 
-  socket.on('joinGroup', (groupId) => {
-    socket.join(groupId);
-    console.log(`User ${socket.id} joined group room: ${groupId}`);
-  });
+    socket.on('joinGroup', (groupId) => {
+        socket.join(groupId);
+        console.log(`User ${socket.id} joined group room: ${groupId}`);
+    });
 
-  socket.on('leaveGroup', (groupId) => {
-    socket.leave(groupId);
-    console.log(`User ${socket.id} left group room: ${groupId}`);
-  });
+    socket.on('leaveGroup', (groupId) => {
+        socket.leave(groupId);
+        console.log(`User ${socket.id} left group room: ${groupId}`);
+    });
 
-  socket.on('disconnect', () => {
-    console.log('User disconnected with id:', socket.id);
-  });
+    socket.on('disconnect', () => {
+        console.log('User disconnected with id:', socket.id);
+    });
 });
 
 const PORT = process.env.PORT || 5000;
 
 server.listen(PORT, () => {
-  console.log(`✅ Server running in development mode on port ${PORT}`);
+    console.log(`✅ Server running in development mode on port ${PORT}`);
 });

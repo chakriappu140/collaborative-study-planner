@@ -4,10 +4,11 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useSocket } from '../context/SocketContext.jsx';
 import TaskBoard from '../components/TaskBoard.jsx';
 import CalendarView from '../components/CalendarView.jsx';
-import AddMemberModal from '../components/AddMemberModal.jsx';
 import ChatWindow from '../components/ChatWindow.jsx';
+import AddMemberModal from '../components/AddMemberModal.jsx';
 import InviteModal from '../components/InviteModal.jsx';
-import ManageMembersModal from '../components/ManageMembersModal.jsx'; // NEW IMPORT
+import ManageMembersModal from '../components/ManageMembersModal.jsx';
+import FileManagement from '../components/FileManagement.jsx';
 
 const GroupPage = () => {
     const { groupId } = useParams();
@@ -18,7 +19,8 @@ const GroupPage = () => {
     const [loading, setLoading] = useState(true);
     const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
     const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
-    const [isManageMembersModalOpen, setIsManageMembersModalOpen] = useState(false); // NEW STATE
+    const [isManageMembersModalOpen, setIsManageMembersModalOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState('tasks'); // NEW STATE for tab navigation
 
     useEffect(() => {
         const fetchGroupDetails = async () => {
@@ -53,17 +55,18 @@ const GroupPage = () => {
                     members: updatedGroup.members
                 }));
             });
-            // NEW: Socket listener for when a member is removed
             socket.on('group:member_removed', ({ memberId, group: updatedGroup }) => {
                 setGroup(prevGroup => ({
                     ...prevGroup,
                     members: updatedGroup.members.filter(m => m._id !== memberId)
                 }));
-                // If the current user was removed, redirect them
                 if (memberId === user._id) {
                     alert("You have been removed from this group.");
                     navigate("/dashboard");
                 }
+            });
+            socket.on('notification:new', (newNotification) => {
+                console.log("New notification received:", newNotification);
             });
         }
 
@@ -72,7 +75,8 @@ const GroupPage = () => {
                 socket.emit('leaveGroup', groupId);
                 socket.off('group:deleted');
                 socket.off('group:member_added');
-                socket.off('group:member_removed'); // Clean up
+                socket.off('group:member_removed');
+                socket.off('notification:new');
             }
         };
     }, [groupId, axiosInstance, navigate, socket, user]);
@@ -87,7 +91,6 @@ const GroupPage = () => {
         }
     };
     
-    // NEW: Function to handle member list updates
     const handleMembersUpdated = (updatedMembers) => {
         setGroup(prevGroup => ({
             ...prevGroup,
@@ -105,6 +108,24 @@ const GroupPage = () => {
   
     const isUserAdmin = user && group.admin.toString() === user._id;
 
+    const renderContent = () => {
+        switch (activeTab) {
+            case 'tasks':
+                return <TaskBoard groupId={groupId} members={group.members} />;
+            case 'calendar':
+                return <CalendarView groupId={groupId} />;
+            case 'chat':
+                return <ChatWindow groupId={groupId} />;
+            case 'files':
+                return <FileManagement groupId={groupId} isUserAdmin={isUserAdmin} />;
+            default:
+                return null;
+        }
+    };
+
+    const tabClasses = (tabName) => 
+        `px-4 py-2 font-semibold ${activeTab === tabName ? 'bg-gray-700 text-white' : 'text-gray-400 hover:bg-gray-800'}`;
+
     return (
         <div className="min-h-screen bg-gray-900 text-white p-8">
             <div className="w-full max-w-6xl mx-auto">
@@ -120,7 +141,7 @@ const GroupPage = () => {
                         {isUserAdmin && (
                             <>
                                 <button
-                                    onClick={() => setIsManageMembersModalOpen(true)} // NEW ONCLICK HANDLER
+                                    onClick={() => setIsManageMembersModalOpen(true)}
                                     className="px-4 py-2 bg-yellow-600 rounded hover:bg-yellow-700 transition-colors"
                                 >
                                     Manage Members
@@ -149,10 +170,17 @@ const GroupPage = () => {
                 </div>
                 <p className="text-gray-400 mb-8">{group.description}</p>
                 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <TaskBoard groupId={groupId} members={group.members} />
-                    <CalendarView groupId={groupId} />
-                    <ChatWindow groupId={groupId} />
+                {/* NEW: Tab Navigation */}
+                <div className="flex border-b border-gray-700 mb-6">
+                    <button onClick={() => setActiveTab('tasks')} className={tabClasses('tasks')}>Tasks</button>
+                    <button onClick={() => setActiveTab('calendar')} className={tabClasses('calendar')}>Calendar</button>
+                    <button onClick={() => setActiveTab('chat')} className={tabClasses('chat')}>Chat</button>
+                    <button onClick={() => setActiveTab('files')} className={tabClasses('files')}>Files</button>
+                </div>
+
+                {/* NEW: Conditional rendering of content */}
+                <div>
+                    {renderContent()}
                 </div>
             </div>
             {isAddMemberModalOpen && (
@@ -169,7 +197,7 @@ const GroupPage = () => {
                 />
             )}
             {isManageMembersModalOpen && (
-                <ManageMembersModal // NEW MODAL
+                <ManageMembersModal
                     group={group}
                     onClose={() => setIsManageMembersModalOpen(false)}
                     onMembersUpdated={handleMembersUpdated}
