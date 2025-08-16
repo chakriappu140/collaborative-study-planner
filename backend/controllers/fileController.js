@@ -5,8 +5,16 @@ import fs from "fs";
 import File from "../models/File.js";
 import Group from "../models/Group.js";
 import Notification from "../models/Notification.js";
+import { v2 as cloudinary } from 'cloudinary'; // NEW IMPORT
 
-// Helper function to create a notification
+// Configure Cloudinary
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+// A helper function to create a notification
 const createNotification = async (req, groupId, senderId, message, link) => {
     try {
         const group = await Group.findById(groupId);
@@ -30,26 +38,9 @@ const createNotification = async (req, groupId, senderId, message, link) => {
     }
 };
 
-// Setup multer for file storage
-const storage = multer.diskStorage({
-    destination(req, file, cb) {
-        cb(null, 'uploads/');
-    },
-    filename(req, file, cb) {
-        cb(
-            null,
-            `${file.fieldname}-${Date.now()}${path.extname(file.originalname)}`
-        );
-    },
-});
-
-const upload = multer({
-    storage,
-    fileFilter: function (req, file, cb) {
-        // You can add file type validation here if needed
-        cb(null, true);
-    },
-});
+// Use memory storage for multer since we're uploading to Cloudinary
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
 // @desc    Upload a file to a group
 // @route   POST /api/groups/:groupId/files
@@ -63,18 +54,27 @@ const uploadFile = asyncHandler(async (req, res) => {
         throw new Error("No file uploaded");
     }
 
-    // Check if user is a member of the group
     const group = await Group.findById(groupId);
     if (!group || !group.members.includes(uploaderId)) {
         res.status(403);
         throw new Error("Not authorized to upload files to this group");
     }
 
+    // Upload the file to Cloudinary
+    const result = await cloudinary.uploader.upload(
+        `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`,
+        {
+            folder: `study-planner/${groupId}`,
+            resource_type: 'auto'
+        }
+    );
+
     const newFile = await File.create({
         group: groupId,
         uploader: uploaderId,
-        fileName: req.file.filename,
-        filePath: req.file.path,
+        fileName: req.file.originalname, // Store original name
+        filePath: result.secure_url,     // Store the secure URL from Cloudinary
+        publicId: result.public_id       // Store the public_id for deletion
     });
 
     req.io.to(groupId).emit("file:uploaded", newFile);
@@ -112,9 +112,9 @@ const deleteFile = asyncHandler(async (req, res) => {
         throw new Error("User not authorized to delete this file");
     }
     
-    // Remove the file from the server's file system
-    if (fs.existsSync(file.filePath)) {
-        fs.unlinkSync(file.filePath);
+    // Delete the file from Cloudinary using its public_id
+    if (file.publicId) {
+        await cloudinary.uploader.destroy(file.publicId);
     }
     
     await File.deleteOne({ _id: fileId });
