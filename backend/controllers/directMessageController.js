@@ -20,11 +20,9 @@ const sendDirectMessage = asyncHandler(async (req, res) => {
 
     await newMessage.populate('sender', 'name');
 
+    // Emit a real-time event to the recipient's private room
     req.io.to(recipientId.toString()).emit("dm:new", newMessage);
     
-    // You can also add a notification for the recipient here
-    // await createNotification(...)
-
     res.status(201).json(newMessage);
 });
 
@@ -56,6 +54,9 @@ const markMessagesAsRead = asyncHandler(async (req, res) => {
         { $set: { isRead: true } }
     );
 
+    // Emit an event to the sender that the messages have been read
+    req.io.to(recipientId.toString()).emit('dm:read', userId);
+
     res.status(200).json({ message: "Messages marked as read" });
 });
 
@@ -68,7 +69,7 @@ const getUnreadDMCounts = asyncHandler(async (req, res) => {
     const unreadCounts = await DirectMessage.aggregate([
         {
             $match: {
-                recipient: userId,
+                recipient: mongoose.Types.ObjectId(userId), // Fix for ObjectId
                 isRead: false
             }
         },

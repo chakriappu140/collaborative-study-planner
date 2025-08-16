@@ -11,9 +11,9 @@ const DirectMessagesModal = ({ onClose }) => {
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
     const [loading, setLoading] = useState(true);
+    const [unreadCounts, setUnreadCounts] = useState({}); // NEW STATE
     const messagesEndRef = useRef(null);
 
-    // Fetch all users to populate the contact list
     const fetchAllUsers = async () => {
         try {
             const res = await axiosInstance.get('/api/users');
@@ -24,12 +24,28 @@ const DirectMessagesModal = ({ onClose }) => {
             setLoading(false);
         }
     };
+    
+    // NEW: Fetch unread DM counts
+    const fetchUnreadCounts = async () => {
+        try {
+            const res = await axiosInstance.get('/api/messages/direct/unread-counts');
+            const counts = res.data.reduce((acc, curr) => {
+                acc[curr._id] = curr.count;
+                return acc;
+            }, {});
+            setUnreadCounts(counts);
+        } catch (err) {
+            console.error("Failed to fetch unread DM counts:", err);
+        }
+    };
 
-    // Fetch message history for the selected recipient
     const fetchMessages = async (recipientId) => {
         try {
             const res = await axiosInstance.get(`/api/messages/direct/${recipientId}`);
             setMessages(res.data);
+            // Mark messages as read when conversation is opened
+            await axiosInstance.put(`/api/messages/direct/read/${recipientId}`);
+            setUnreadCounts(prev => ({ ...prev, [recipientId]: 0 }));
         } catch (err) {
             console.error("Failed to fetch messages:", err);
         }
@@ -37,26 +53,34 @@ const DirectMessagesModal = ({ onClose }) => {
 
     useEffect(() => {
         fetchAllUsers();
+        fetchUnreadCounts();
     }, []);
 
     useEffect(() => {
         if (recipient) {
             fetchMessages(recipient._id);
-            // Listen for new DMs from this specific recipient
-            if (socket) {
-                socket.on('dm:new', (newDM) => {
-                    if (newDM.sender._id === recipient._id) {
-                        setMessages(prev => [...prev, newDM]);
-                    }
-                });
-            }
         }
-        return () => {
-            if (socket) {
-                socket.off('dm:new');
-            }
+        if (socket && user) {
+            const dmHandler = (newDM) => {
+                // If the DM is for the currently open chat, add it
+                if (recipient && newDM.sender._id === recipient._id) {
+                    setMessages(prev => [...prev, newDM]);
+                    // Optimistically mark as read on the backend
+                    axiosInstance.put(`/api/messages/direct/read/${recipient._id}`);
+                } else {
+                    // Otherwise, update the unread count
+                    setUnreadCounts(prev => ({
+                        ...prev,
+                        [newDM.sender._id]: (prev[newDM.sender._id] || 0) + 1
+                    }));
+                }
+            };
+            socket.on('dm:new', dmHandler);
+            return () => {
+                socket.off('dm:new', dmHandler);
+            };
         }
-    }, [recipient, socket]);
+    }, [recipient, socket, user]);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -80,7 +104,6 @@ const DirectMessagesModal = ({ onClose }) => {
 
     const handleRecipientSelect = (selectedRecipient) => {
         setRecipient(selectedRecipient);
-        setMessages([]); // Clear old messages
     };
 
     if (loading) {
@@ -106,10 +129,15 @@ const DirectMessagesModal = ({ onClose }) => {
                             <div 
                                 key={u._id} 
                                 onClick={() => handleRecipientSelect(u)}
-                                className={`p-3 rounded-lg flex items-center space-x-3 cursor-pointer ${recipient?._id === u._id ? 'bg-indigo-600' : 'bg-gray-700 hover:bg-gray-600'}`}
+                                className={`p-3 rounded-lg flex items-center space-x-3 cursor-pointer ${recipient?._id === u._id ? 'bg-indigo-600' : 'bg-gray-700 hover:bg-gray-600'} relative`}
                             >
                                 <FaUserCircle size={20} />
                                 <span className="font-semibold">{u.name}</span>
+                                {unreadCounts[u._id] > 0 && (
+                                    <span className="absolute top-1 right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 bg-red-600 rounded-full">
+                                        {unreadCounts[u._id]}
+                                    </span>
+                                )}
                             </div>
                         ))}
                     </div>
@@ -163,3 +191,8 @@ const DirectMessagesModal = ({ onClose }) => {
 };
 
 export default DirectMessagesModal;
+
+
+
+
+// frontend/src/pages/Dashboard.jsx
