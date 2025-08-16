@@ -10,6 +10,7 @@ import InviteModal from '../components/InviteModal.jsx';
 import ManageMembersModal from '../components/ManageMembersModal.jsx';
 import FileManagement from '../components/FileManagement.jsx';
 import ProgressDashboard from '../components/ProgressDashboard.jsx';
+import MembersList from '../components/MembersList.jsx'; // NEW IMPORT
 
 const GroupPage = () => {
     const { groupId } = useParams();
@@ -21,7 +22,7 @@ const GroupPage = () => {
     const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
     const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
     const [isManageMembersModalOpen, setIsManageMembersModalOpen] = useState(false);
-    const [activeTab, setActiveTab] = useState('tasks'); // NEW STATE for tab navigation
+    const [activeTab, setActiveTab] = useState('tasks');
 
     useEffect(() => {
         const fetchGroupDetails = async () => {
@@ -119,8 +120,10 @@ const GroupPage = () => {
                 return <ChatWindow groupId={groupId} />;
             case 'files':
                 return <FileManagement groupId={groupId} isUserAdmin={isUserAdmin} />;
-            case 'progress': // NEW CASE
+            case 'progress':
                 return <ProgressDashboard groupId={groupId} />;
+            case 'members': // NEW CASE
+                return <MembersList members={group.members} />;
             default:
                 return null;
         }
@@ -173,13 +176,13 @@ const GroupPage = () => {
                 </div>
                 <p className="text-gray-400 mb-8">{group.description}</p>
                 
-                {/* NEW: Tab Navigation */}
                 <div className="flex border-b border-gray-700 mb-6">
                     <button onClick={() => setActiveTab('tasks')} className={tabClasses('tasks')}>Tasks</button>
                     <button onClick={() => setActiveTab('calendar')} className={tabClasses('calendar')}>Calendar</button>
                     <button onClick={() => setActiveTab('chat')} className={tabClasses('chat')}>Chat</button>
                     <button onClick={() => setActiveTab('files')} className={tabClasses('files')}>Files</button>
-                    <button onClick={() => setActiveTab('progress')} className={tabClasses('progress')}>Progress</button> {/* NEW TAB */}
+                    <button onClick={() => setActiveTab('progress')} className={tabClasses('progress')}>Progress</button>
+                    <button onClick={() => setActiveTab('members')} className={tabClasses('members')}>Members</button> {/* NEW TAB */}
                 </div>
 
                 <div>
