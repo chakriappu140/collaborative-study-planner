@@ -1,11 +1,9 @@
-// backend/controllers/taskController.js
 import asyncHandler from 'express-async-handler';
 import Task from '../models/Task.js';
 import Group from '../models/Group.js';
 import Notification from '../models/Notification.js';
 
-// FIX: The createNotification function now accepts the `io` object
-const createNotification = async (io, groupId, senderId, message, link) => {
+const createNotification = async (req, groupId, senderId, message, link) => {
     try {
         const group = await Group.findById(groupId);
         if (!group) return;
@@ -21,8 +19,7 @@ const createNotification = async (io, groupId, senderId, message, link) => {
         const createdNotifications = await Notification.insertMany(notifications);
 
         for (const notif of createdNotifications) {
-            // FIX: Use the io object to emit the notification
-            io.to(notif.user.toString()).emit('notification:new', notif);
+            req.io.to(notif.user.toString()).emit('notification:new', notif);
         }
     } catch (error) {
         console.error('Failed to create notification:', error);
@@ -60,8 +57,7 @@ const createTask = asyncHandler(async (req, res) => {
 
     const group = await Group.findById(groupId);
     if (group) {
-        // FIX: Pass req.io to the createNotification function
-        await createNotification(req.io, groupId, senderId, `A new task "${task.title}" has been created in ${group.name}.`, `/groups/${groupId}`);
+        await createNotification(req, groupId, senderId, `A new task "${task.title}" has been created in ${group.name}.`, `/groups/${groupId}`);
     }
 
     res.status(201).json({
@@ -93,8 +89,7 @@ const updateTask = asyncHandler(async (req, res) => {
         
         const group = await Group.findById(groupId);
         if (group) {
-            // FIX: Pass req.io to the createNotification function
-            await createNotification(req.io, groupId, senderId, `Task "${updatedTask.title}" has been updated in ${group.name}.`, `/groups/${groupId}`);
+            await createNotification(req, groupId, senderId, `Task "${updatedTask.title}" has been updated in ${group.name}.`, `/groups/${groupId}`);
         }
 
         res.status(200).json(updatedTask);
@@ -121,8 +116,7 @@ const deleteTask = asyncHandler(async (req, res) => {
         
         const group = await Group.findById(groupId);
         if (group) {
-            // FIX: Pass req.io to the createNotification function
-            await createNotification(req.io, groupId, senderId, `Task "${title}" has been deleted from ${group.name}.`, `/groups/${groupId}`);
+            await createNotification(req, groupId, senderId, `Task "${title}" has been deleted from ${group.name}.`, `/groups/${groupId}`);
         }
 
         res.status(200).json({ message: 'Task removed' });
@@ -132,4 +126,39 @@ const deleteTask = asyncHandler(async (req, res) => {
     }
 });
 
-export { createTask, getGroupTasks, updateTask, deleteTask };
+// @desc    Get task progress for a group
+// @route   GET /api/groups/:groupId/tasks/progress
+// @access  Private
+const getTaskProgress = asyncHandler(async (req, res) => {
+    const { groupId } = req.params;
+
+    const pipeline = [
+        {
+            $match: {
+                group: mongoose.Types.ObjectId(groupId)
+            }
+        },
+        {
+            $group: {
+                _id: '$status',
+                count: { $sum: 1 }
+            }
+        }
+    ];
+
+    const result = await Task.aggregate(pipeline);
+
+    const progress = {
+        'To Do': 0,
+        'In Progress': 0,
+        'Done': 0
+    };
+
+    result.forEach(item => {
+        progress[item._id] = item.count;
+    });
+
+    res.status(200).json(progress);
+});
+
+export { createTask, getGroupTasks, updateTask, deleteTask, getTaskProgress };

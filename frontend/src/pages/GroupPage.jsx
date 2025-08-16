@@ -9,6 +9,7 @@ import AddMemberModal from '../components/AddMemberModal.jsx';
 import InviteModal from '../components/InviteModal.jsx';
 import ManageMembersModal from '../components/ManageMembersModal.jsx';
 import FileManagement from '../components/FileManagement.jsx';
+import ProgressDashboard from '../components/ProgressDashboard.jsx';
 
 const GroupPage = () => {
     const { groupId } = useParams();
@@ -118,6 +119,8 @@ const GroupPage = () => {
                 return <ChatWindow groupId={groupId} />;
             case 'files':
                 return <FileManagement groupId={groupId} isUserAdmin={isUserAdmin} />;
+            case 'progress': // NEW CASE
+                return <ProgressDashboard groupId={groupId} />;
             default:
                 return null;
         }
@@ -176,9 +179,9 @@ const GroupPage = () => {
                     <button onClick={() => setActiveTab('calendar')} className={tabClasses('calendar')}>Calendar</button>
                     <button onClick={() => setActiveTab('chat')} className={tabClasses('chat')}>Chat</button>
                     <button onClick={() => setActiveTab('files')} className={tabClasses('files')}>Files</button>
+                    <button onClick={() => setActiveTab('progress')} className={tabClasses('progress')}>Progress</button> {/* NEW TAB */}
                 </div>
 
-                {/* NEW: Conditional rendering of content */}
                 <div>
                     {renderContent()}
                 </div>
