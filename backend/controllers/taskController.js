@@ -136,7 +136,7 @@ const getTaskProgress = asyncHandler(async (req, res) => {
     const pipeline = [
         {
             $match: {
-                group: mongoose.Types.ObjectId(groupId)
+                group: new mongoose.Types.ObjectId(groupId)
             }
         },
         {
