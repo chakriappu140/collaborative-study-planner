@@ -10,9 +10,11 @@ import taskRoutes from './routes/taskRoutes.js';
 import calendarRoutes from './routes/calendarRoutes.js';
 import messageRoutes from './routes/messageRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
-import fileRoutes from './routes/fileRoutes.js'; // NEW IMPORT
+import fileRoutes from './routes/fileRoutes.js';
+import directMessageRoutes from './routes/directMessageRoutes.js'; // NEW IMPORT
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 import path from "path";
+import fs from "fs";
 
 dotenv.config();
 
@@ -44,11 +46,16 @@ app.use('/api/groups/:groupId/tasks', taskRoutes);
 app.use('/api/groups/:groupId/calendar', calendarRoutes);
 app.use("/api/groups/:groupId/messages", messageRoutes);
 app.use("/api/notifications", notificationRoutes);
-app.use("/api/groups/:groupId/files", fileRoutes); // NEW ROUTE
+app.use("/api/groups/:groupId/files", fileRoutes);
+app.use("/api/messages/direct", directMessageRoutes); // NEW ROUTE
 
 // Serve uploaded files statically
 const __dirname = path.resolve();
-app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // NEW STATIC ROUTE
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir);
+}
+app.use('/uploads', express.static(uploadsDir));
 
 app.get('/', (req, res) => {
     res.send('API is running...');

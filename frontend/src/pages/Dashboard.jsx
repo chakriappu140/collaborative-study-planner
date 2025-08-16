@@ -4,7 +4,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import CreateGroupModal from '../components/CreateGroupModal.jsx';
 import JoinGroupModal from '../components/JoinGroupModal.jsx';
 import NotificationBell from '../components/NotificationBell.jsx';
-import { FaUserCircle } from 'react-icons/fa'; // NEW IMPORT
+import DirectMessagesModal from '../components/DirectMessagesModal.jsx'; // NEW IMPORT
+import { FaUserCircle, FaPaperPlane } from 'react-icons/fa'; // UPDATED IMPORT
 
 const Dashboard = () => {
     const { user, logout, axiosInstance } = useAuth();
@@ -12,6 +13,7 @@ const Dashboard = () => {
     const [groups, setGroups] = useState([]);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
+    const [isDMsModalOpen, setIsDMsModalOpen] = useState(false); // NEW STATE
     const [loadingGroups, setLoadingGroups] = useState(true);
     const [initialInviteToken, setInitialInviteToken] = useState(null);
 
@@ -55,6 +57,13 @@ const Dashboard = () => {
                     <Link to="/profile" className="p-2 rounded-full text-white bg-gray-700 hover:bg-gray-600 transition-colors">
                         <FaUserCircle className="w-5 h-5" />
                     </Link>
+                    <button
+                        onClick={() => setIsDMsModalOpen(true)} // NEW BUTTON
+                        className="p-2 rounded-full text-white bg-gray-700 hover:bg-gray-600 transition-colors"
+                        title="Direct Messages"
+                    >
+                        <FaPaperPlane className="w-5 h-5" />
+                    </button>
                     <button
                         onClick={handleLogout}
                         className="px-4 py-2 text-white bg-red-600 rounded hover:bg-red-700 transition-colors"
@@ -114,6 +123,9 @@ const Dashboard = () => {
                     }}
                     initialToken={initialInviteToken}
                 />
+            )}
+            {isDMsModalOpen && (
+                <DirectMessagesModal onClose={() => setIsDMsModalOpen(false)} />
             )}
         </div>
     );
