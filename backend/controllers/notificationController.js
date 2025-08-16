@@ -32,4 +32,27 @@ const deleteAllNotifications = asyncHandler(async (req, res) => {
     res.status(200).json({ message: "All notifications deleted" });
 });
 
-export {getMyNotifications, markNotificationAsRead, deleteAllNotifications}
+// @desc    Delete a single notification
+// @route   DELETE /api/notifications/:notificationId
+// @access  Private
+const deleteNotification = asyncHandler(async (req, res) => {
+    const { notificationId } = req.params;
+    const notification = await Notification.findById(notificationId);
+
+    if (!notification) {
+        res.status(404);
+        throw new Error("Notification not found");
+    }
+
+    // Ensure the user owns the notification
+    if (notification.user.toString() !== req.user._id.toString()) {
+        res.status(401);
+        throw new Error("Not authorized to delete this notification");
+    }
+
+    await Notification.deleteOne({ _id: notificationId });
+    res.status(200).json({ message: "Notification removed" });
+});
+
+
+export {getMyNotifications, markNotificationAsRead, deleteAllNotifications, deleteNotification}
