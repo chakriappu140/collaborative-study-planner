@@ -97,7 +97,7 @@ const FileManagement = ({ groupId, isUserAdmin }) => {
                         files.map(file => (
                             <div key={file._id} className="bg-gray-700 p-3 rounded-lg flex justify-between items-center">
                                 <a
-                                    href={`${import.meta.env.VITE_API_BASE_URL}/${file.filePath}`}
+                                    href={file.filePath} // FIX: Use the file.filePath directly
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="flex items-center space-x-2 text-white hover:text-indigo-400 transition-colors"
