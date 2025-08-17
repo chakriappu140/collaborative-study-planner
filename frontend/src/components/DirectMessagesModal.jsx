@@ -46,6 +46,7 @@ const DirectMessagesModal = ({ onClose, onUnreadCountChange }) => {
             setMessages(res.data);
             await axiosInstance.put(`/api/messages/direct/read/${recipientId}`);
             setUnreadCounts(prev => ({ ...prev, [recipientId]: 0 }));
+            onUnreadCountChange(prev => prev - (unreadCounts[recipientId] || 0));
         } catch (err) {
             console.error("Failed to fetch messages:", err);
         }

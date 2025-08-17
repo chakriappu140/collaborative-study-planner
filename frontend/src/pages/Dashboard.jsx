@@ -160,15 +160,7 @@ const Dashboard = () => {
                 />
             )}
             {isDMsModalOpen && (
-                <DirectMessagesModal 
-                    onClose={() => {
-                        setIsDMsModalOpen(false);
-                        // Resetting the total unread count on close
-                        // This is a stylistic choice, could also refetch
-                        setTotalUnreadDMs(0); 
-                    }} 
-                    onUnreadCountChange={setTotalUnreadDMs} 
-                />
+                <DirectMessagesModal onClose={() => setIsDMsModalOpen(false)} />
             )}
         </div>
     );
