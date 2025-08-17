@@ -15,6 +15,7 @@ const DirectMessagesModal = ({ onClose, onUnreadCountChange, initialUnreadCounts
     const [unreadCounts, setUnreadCounts] = useState(initialUnreadCounts);
     const messagesEndRef = useRef(null);
 
+    //new right
     const fetchAllUsers = async () => {
         try {
             const res = await axiosInstance.get('/api/users');
