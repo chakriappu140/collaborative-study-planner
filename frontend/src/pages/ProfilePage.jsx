@@ -64,11 +64,13 @@ const ProfilePage = () => {
         }
 
         try {
-            await axiosInstance.put('/api/users/profile', formData, {
+            const res = await axiosInstance.put('/api/users/profile', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
             });
+            // The API response includes a new token, which should be used to update the user state.
+            // For now, we'll keep the logout logic as it is to ensure a fresh token is fetched.
             logout();
             setMessage('Profile updated successfully! Please log in again.');
             setTimeout(() => navigate('/login'), 2000);
