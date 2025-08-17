@@ -19,7 +19,6 @@ const Dashboard = () => {
     const [loadingGroups, setLoadingGroups] = useState(true);
     const [initialInviteToken, setInitialInviteToken] = useState(null);
     const [totalUnreadDMs, setTotalUnreadDMs] = useState(0);
-    const [unreadDMCounts, setUnreadDMCounts] = useState({});
 
     useEffect(() => {
         const fetchUnreadCount = async () => {
@@ -30,7 +29,6 @@ const Dashboard = () => {
                     acc[curr._id] = curr.count;
                     return acc;
                 }, {});
-                setUnreadDMCounts(counts);
                 const totalCount = Object.values(counts).reduce((sum, item) => sum + item, 0);
                 setTotalUnreadDMs(totalCount);
             } catch (err) {
@@ -53,7 +51,7 @@ const Dashboard = () => {
             return () => {
                 socket.off('dm:read', dmReadHandler);
                 socket.off('dm:new', dmNewHandler);
-            };
+            }
         }
     }, [user, axiosInstance, socket]);
 
@@ -171,9 +169,10 @@ const Dashboard = () => {
             )}
             {isDMsModalOpen && (
                 <DirectMessagesModal
-                    onClose={() => setIsDMsModalOpen(false)}
+                    onClose={() => {
+                        setIsDMsModalOpen(false);
+                    }}
                     onUnreadCountChange={setTotalUnreadDMs}
-                    initialUnreadCounts={unreadDMCounts}
                 />
             )}
         </div>
