@@ -2,7 +2,7 @@ import asyncHandler from 'express-async-handler';
 import Task from '../models/Task.js';
 import Group from '../models/Group.js';
 import Notification from '../models/Notification.js';
-import mongoose from 'mongoose'; // <-- NEW IMPORT
+import mongoose from 'mongoose';
 
 const createNotification = async (req, groupId, senderId, message, link) => {
     try {
@@ -38,7 +38,8 @@ const getGroupTasks = asyncHandler(async (req, res) => {
 // @access  Private
 const createTask = asyncHandler(async (req, res) => {
     const { groupId } = req.params;
-    const { title, description, assignedTo, dueDate } = req.body;
+    // NEW: Get priority from the request body
+    const { title, description, assignedTo, dueDate, priority } = req.body;
     const senderId = req.user._id;
 
     if (!title) {
@@ -52,6 +53,7 @@ const createTask = asyncHandler(async (req, res) => {
         description,
         assignedTo,
         dueDate,
+        priority: priority || 'Low', // NEW: Set a default priority
     });
 
     req.io.to(groupId).emit('task:created', task);
@@ -72,7 +74,8 @@ const createTask = asyncHandler(async (req, res) => {
 // @access  Private
 const updateTask = asyncHandler(async (req, res) => {
     const { taskId, groupId } = req.params;
-    const { title, description, assignedTo, status, dueDate } = req.body;
+    // NEW: Get priority from the request body
+    const { title, description, assignedTo, status, dueDate, priority } = req.body;
     const senderId = req.user._id;
 
     const task = await Task.findById(taskId);
@@ -83,6 +86,7 @@ const updateTask = asyncHandler(async (req, res) => {
         task.assignedTo = assignedTo || task.assignedTo;
         task.status = status || task.status;
         task.dueDate = dueDate || task.dueDate;
+        task.priority = priority || task.priority; // NEW: Update priority
 
         const updatedTask = await task.save();
 

@@ -1,27 +1,29 @@
-import React, {useState} from "react"
-import moment from "moment"
-import {FaSave, FaTrash, FaTimes} from "react-icons/fa"
+import React, { useState } from 'react';
+import moment from 'moment';
+import { FaSave, FaTrash, FaTimes } from 'react-icons/fa';
 
-const TaskModal = ({task, members, onClose, onUpdate, onDelete}) => {
-    const [title, setTitle] = useState(task.title)
-    const [description, setDescription] = useState(task.description || "")
-    const [dueDate, setDueDate] = useState(task.dueDate ? moment(task.dueDate).format("YYYY-MM-DDTHH:mm") : "")
-    const [assignedTo, setAssignedTo] = useState(task.assignedTo?._id || "")
+const TaskModal = ({ task, members, onClose, onUpdate, onDelete }) => {
+    const [title, setTitle] = useState(task.title);
+    const [description, setDescription] = useState(task.description || '');
+    const [dueDate, setDueDate] = useState(task.dueDate ? moment(task.dueDate).format('YYYY-MM-DDTHH:mm') : '');
+    const [assignedTo, setAssignedTo] = useState(task.assignedTo?._id || '');
+    const [priority, setPriority] = useState(task.priority || 'Low'); // NEW STATE
 
     const handleUpdate = (e) => {
-        e.preventDefault()
+        e.preventDefault();
         onUpdate({
             ...task,
             title,
             description,
             dueDate: dueDate ? new Date(dueDate) : null,
-            assignedTo: assignedTo || null
-        })
-    }
+            assignedTo: assignedTo || null,
+            priority, // NEW: Include priority in the update
+        });
+    };
 
     const handleDelete = () => {
-        onDelete(task._id)
-    }
+        onDelete(task._id);
+    };
 
     return (
         <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
@@ -53,7 +55,6 @@ const TaskModal = ({task, members, onClose, onUpdate, onDelete}) => {
                             value={dueDate}
                             onChange={(e) => setDueDate(e.target.value)}
                             className="w-full px-3 py-2 mt-1 text-white bg-gray-700 border border-gray-600 rounded"
-                            required
                         />
                     </div>
                     <div>
@@ -71,21 +72,34 @@ const TaskModal = ({task, members, onClose, onUpdate, onDelete}) => {
                             ))}
                         </select>
                     </div>
+                    <div>
+                        <label className="block text-gray-400">Priority</label>
+                        <select
+                            value={priority}
+                            onChange={(e) => setPriority(e.target.value)}
+                            className="w-full px-3 py-2 mt-1 text-white bg-gray-700 border border-gray-600 rounded"
+                            required
+                        >
+                            <option value="Low">Low</option>
+                            <option value="Medium">Medium</option>
+                            <option value="High">High</option>
+                        </select>
+                    </div>
                     <div className="flex justify-between space-x-4">
                         <button type="submit" className="flex-1 px-4 py-2 text-white bg-indigo-600 rounded hover:bg-indigo-700 flex items-center justify-center">
-                            <FaSave className="mr-2"/> Save
+                            <FaSave className="mr-2" /> Save
                         </button>
                         <button type="button" onClick={handleDelete} className="flex-1 px-4 py-2 text-white bg-red-600 rounded hover:bg-red-700 flex items-center justify-center">
-                            <FaTrash className="mr-2"/> Delete
+                            <FaTrash className="mr-2" /> Delete
                         </button>
                         <button type="button" onClick={onClose} className="flex-1 px-4 py-2 text-gray-300 bg-gray-600 rounded hover:bg-gray-700 flex items-center justify-center">
-                            <FaTimes className="mr-2"/> Cancel
+                            <FaTimes className="mr-2" /> Cancel
                         </button>
                     </div>
                 </form>
             </div>
         </div>
-    )
-}
+    );
+};
 
-export default TaskModal
+export default TaskModal;

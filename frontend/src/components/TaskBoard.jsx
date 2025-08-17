@@ -3,8 +3,14 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useSocket } from '../context/SocketContext.jsx';
 import { FaPlus, FaTrash } from 'react-icons/fa';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import TaskModal from './TaskModal.jsx'; // NEW IMPORT
-import moment from "moment"
+import moment from 'moment';
+import TaskModal from './TaskModal.jsx';
+
+const priorityColors = {
+    'Low': 'bg-gray-500',
+    'Medium': 'bg-yellow-500',
+    'High': 'bg-red-500',
+};
 
 const TaskBoard = ({ groupId, members }) => {
     const { axiosInstance } = useAuth();
@@ -12,7 +18,7 @@ const TaskBoard = ({ groupId, members }) => {
     const [tasks, setTasks] = useState([]);
     const [title, setTitle] = useState('');
     const [loading, setLoading] = useState(true);
-    const [selectedTask, setSelectedTask] = useState(null); // NEW STATE for modal
+    const [selectedTask, setSelectedTask] = useState(null);
 
     const fetchTasks = async () => {
         try {
@@ -61,7 +67,8 @@ const TaskBoard = ({ groupId, members }) => {
         e.preventDefault();
         if (!title.trim()) return;
         try {
-            await axiosInstance.post(`/api/groups/${groupId}/tasks`, { title });
+            // NEW: Send default priority as 'Low'
+            await axiosInstance.post(`/api/groups/${groupId}/tasks`, { title, priority: 'Low' });
             setTitle('');
         } catch (err) {
             console.error('Failed to create task:', err);
@@ -77,7 +84,6 @@ const TaskBoard = ({ groupId, members }) => {
         const newStatus = destination.droppableId;
         const taskId = draggableId;
         
-        // Optimistically update the UI
         const updatedTasks = tasks.map(task =>
             task._id === taskId ? { ...task, status: newStatus } : task
         );
@@ -87,7 +93,7 @@ const TaskBoard = ({ groupId, members }) => {
             await axiosInstance.put(`/api/groups/${groupId}/tasks/${taskId}`, { status: newStatus });
         } catch (err) {
             console.error('Failed to update task status:', err);
-            setTasks(tasks); // Revert the state if the API call fails
+            setTasks(tasks);
         }
     };
 
@@ -143,9 +149,14 @@ const TaskBoard = ({ groupId, members }) => {
                                                             {...provided.draggableProps}
                                                             {...provided.dragHandleProps}
                                                             className="bg-gray-600 p-3 rounded-lg shadow-sm cursor-pointer"
-                                                            onClick={() => setSelectedTask(task)} // NEW ONCLICK HANDLER
+                                                            onClick={() => setSelectedTask(task)}
                                                         >
-                                                            <p className="text-lg">{task.title}</p>
+                                                            <div className="flex justify-between items-center mb-1">
+                                                                <p className="text-lg">{task.title}</p>
+                                                                <span className={`px-2 py-1 rounded-full text-xs text-white ${priorityColors[task.priority]}`}>
+                                                                    {task.priority}
+                                                                </span>
+                                                            </div>
                                                             {task.assignedTo && (
                                                                 <p className="text-sm text-gray-400">Assigned to: {task.assignedTo.name}</p>
                                                             )}
