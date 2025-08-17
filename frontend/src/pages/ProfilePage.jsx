@@ -1,51 +1,124 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { FaUserEdit, FaSpinner, FaUserCircle } from 'react-icons/fa';
 
 const ProfilePage = () => {
     const { user, axiosInstance, logout } = useAuth();
     const navigate = useNavigate();
+
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [avatar, setAvatar] = useState(null);
+
+    const [avatarFile, setAvatarFile] = useState(null);
     const [avatarPreview, setAvatarPreview] = useState('');
-    const [loading, setLoading] = useState(false);
+    const [uploadedAvatarUrl, setUploadedAvatarUrl] = useState('');
+
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        const fetchUserProfile = async () => {
+        const fetchProfile = async () => {
             if (user) {
                 try {
                     const res = await axiosInstance.get('/api/users/profile');
                     setName(res.data.name);
                     setEmail(res.data.email);
                     setAvatarPreview(res.data.avatar);
-                } catch (err) {
-                    console.error('Failed to fetch user profile:', err);
+                    setUploadedAvatarUrl(res.data.avatar);
+                } catch (e) {
                     setError('Failed to load profile data.');
                 }
             }
         };
-        fetchUserProfile();
+        fetchProfile();
     }, [user, axiosInstance]);
 
     const handleFileChange = (e) => {
         const file = e.target.files[0];
-        setAvatar(file);
-        if (file) {
-            setAvatarPreview(URL.createObjectURL(file));
+        if (!file) return;
+
+        setAvatarFile(file);
+        setAvatarPreview(URL.createObjectURL(file));
+        setMessage('');
+        setError('');
+    };
+
+    const handleUpdateAvatar = async () => {
+        if (!avatarFile) {
+            setError('Please select an image first.');
+            return;
+        }
+
+        setLoading(true);
+        setError('');
+        setMessage('');
+
+        const formData = new FormData();
+        formData.append('avatar', avatarFile);
+
+        try {
+            await axiosInstance.put('/api/users/profile', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+            setMessage('Avatar uploaded successfully!');
+            // We need to re-fetch user data to get the new avatar URL
+            const res = await axiosInstance.get('/api/users/profile');
+            setUploadedAvatarUrl(res.data.avatar);
+        } catch (err) {
+            setError(err.response?.data?.message || 'Failed to upload avatar.');
+        } finally {
+            setLoading(false);
+        }
+    };
+    
+    const handleUpdateInfo = async () => {
+        setLoading(true);
+        setError('');
+        setMessage('');
+        
+        try {
+            await axiosInstance.put('/api/users/profile', { name, email }, { headers: { 'Content-Type': 'application/json' } });
+            setMessage('Profile information updated successfully.');
+        } catch (err) {
+            setError(err.response?.data?.message || 'Failed to update profile information.');
+        } finally {
+            setLoading(false);
         }
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setMessage('');
-        setError('');
+    const handleUpdatePassword = async () => {
+        if (password !== confirmPassword) {
+            setError('Passwords do not match.');
+            return;
+        }
+        
         setLoading(true);
+        setError('');
+        setMessage('');
+
+        try {
+            await axiosInstance.put('/api/users/profile', { password }, { headers: { 'Content-Type': 'application/json' } });
+            setMessage('Password updated successfully.');
+            setPassword('');
+            setConfirmPassword('');
+        } catch (err) {
+            setError(err.response?.data?.message || 'Failed to update password.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleUpdateAllAndLogout = async () => {
+        setLoading(true);
+        setError('');
+        setMessage('');
 
         if (password && password !== confirmPassword) {
             setError('Passwords do not match.');
@@ -59,8 +132,8 @@ const ProfilePage = () => {
         if (password) {
             formData.append('password', password);
         }
-        if (avatar) {
-            formData.append('avatar', avatar);
+        if (avatarFile) {
+            formData.append('avatar', avatarFile);
         }
 
         try {
@@ -69,13 +142,11 @@ const ProfilePage = () => {
                     'Content-Type': 'multipart/form-data',
                 },
             });
-            // The API response includes a new token, which should be used to update the user state.
-            // For now, we'll keep the logout logic as it is to ensure a fresh token is fetched.
+            
             logout();
             setMessage('Profile updated successfully! Please log in again.');
             setTimeout(() => navigate('/login'), 2000);
         } catch (err) {
-            console.error('Failed to update user profile:', err);
             setError(err.response?.data?.message || 'Failed to update profile.');
         } finally {
             setLoading(false);
@@ -83,74 +154,100 @@ const ProfilePage = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center p-8">
-            <div className="bg-gray-800 p-8 rounded-lg shadow-lg w-full max-w-md">
+        <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center p-6">
+            <div className="bg-gray-800 p-8 rounded-lg max-w-md w-full shadow-lg">
                 <h2 className="text-3xl font-bold mb-6 text-center">User Profile</h2>
-                {message && <p className="text-green-500 text-center mb-4">{message}</p>}
-                {error && <p className="text-red-500 text-center mb-4">{error}</p>}
-                
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="flex justify-center mb-4">
-                        {avatarPreview ? (
-                            <img src={avatarPreview} alt="Avatar" className="w-32 h-32 rounded-full object-cover" />
-                        ) : (
-                            <FaUserCircle size={128} className="text-gray-500" />
-                        )}
-                    </div>
-                    <div>
-                        <label className="block text-gray-400">Profile Picture</label>
+                {message && <p className="text-green-500 mb-4 text-center">{message}</p>}
+                {error && <p className="text-red-500 mb-4 text-center">{error}</p>}
+
+                <div className="flex justify-center mb-4">
+                    {avatarPreview ? (
+                        <img src={avatarPreview} alt="avatar" className="w-32 h-32 rounded-full object-cover" />
+                    ) : (
+                        <div className="w-32 h-32 flex items-center justify-center bg-gray-600 rounded-full text-6xl">
+                            <FaUserCircle />
+                        </div>
+                    )}
+                </div>
+
+                <form onSubmit={e => e.preventDefault()} className="space-y-4">
+                    <div className="mb-4">
+                        <label className="block mb-2 text-gray-400">Profile Picture</label>
                         <input
                             type="file"
+                            accept="image/*"
                             onChange={handleFileChange}
                             className="w-full text-white bg-gray-700 border border-gray-600 rounded p-2"
                         />
+                        <button
+                            onClick={handleUpdateAvatar}
+                            disabled={!avatarFile || loading}
+                            className={`mt-2 w-full py-2 rounded ${!avatarFile || loading ? 'bg-gray-600 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'} text-white`}
+                        >
+                            {loading && avatarFile ? <FaSpinner className="animate-spin inline-block" /> : 'Update Avatar'}
+                        </button>
                     </div>
-                    <div>
-                        <label className="block text-gray-400">Name</label>
+
+                    <div className="mb-4">
+                        <label className="block mb-2 text-gray-400">Name</label>
                         <input
                             type="text"
                             value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            className="w-full px-3 py-2 mt-1 text-white bg-gray-700 border border-gray-600 rounded"
+                            onChange={e => setName(e.target.value)}
+                            className="w-full px-3 py-2 mb-3 rounded bg-gray-700 border border-gray-600 text-white"
                             required
                         />
-                    </div>
-                    <div>
-                        <label className="block text-gray-400">Email</label>
+                        <label className="block mb-2 text-gray-400">Email</label>
                         <input
                             type="email"
                             value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="w-full px-3 py-2 mt-1 text-white bg-gray-700 border border-gray-600 rounded"
+                            onChange={e => setEmail(e.target.value)}
+                            className="w-full px-3 py-2 rounded bg-gray-700 border border-gray-600 text-white"
                             required
                         />
+                        <button
+                            onClick={handleUpdateInfo}
+                            disabled={loading}
+                            className={`mt-4 w-full py-2 rounded ${loading ? 'bg-gray-600 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'} text-white`}
+                        >
+                            {loading ? <FaSpinner className="animate-spin inline-block" /> : 'Update Name & Email'}
+                        </button>
                     </div>
+
                     <div>
-                        <label className="block text-gray-400">New Password</label>
+                        <label className="block mb-2 text-gray-400">New Password</label>
                         <input
                             type="password"
                             value={password}
-                            onChange={(e) => setPassword(e.target.value)}
+                            onChange={e => setPassword(e.target.value)}
+                            className="w-full px-3 py-2 rounded bg-gray-700 border border-gray-600 text-white"
                             placeholder="Leave blank to keep current password"
-                            className="w-full px-3 py-2 mt-1 text-white bg-gray-700 border border-gray-600 rounded"
                         />
-                    </div>
-                    <div>
-                        <label className="block text-gray-400">Confirm New Password</label>
+                        <label className="block mb-2 text-gray-400">Confirm New Password</label>
                         <input
                             type="password"
                             value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            className="w-full px-3 py-2 mt-1 text-white bg-gray-700 border border-gray-600 rounded"
+                            onChange={e => setConfirmPassword(e.target.value)}
+                            className="w-full px-3 py-2 rounded bg-gray-700 border border-gray-600 text-white"
                         />
+                        <button
+                            onClick={handleUpdatePassword}
+                            disabled={loading}
+                            className={`mt-4 w-full py-2 rounded ${loading ? 'bg-gray-600 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'} text-white`}
+                        >
+                            {loading ? <FaSpinner className="animate-spin inline-block" /> : 'Change Password'}
+                        </button>
                     </div>
+
                     <button
-                        type="submit"
-                        className="w-full px-4 py-2 text-white bg-indigo-600 rounded hover:bg-indigo-700 flex items-center justify-center space-x-2"
+                        type="button"
+                        onClick={handleUpdateAllAndLogout}
                         disabled={loading}
+                        className={`mt-6 w-full py-2 rounded ${loading ? 'bg-gray-600 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'} text-white`}
                     >
-                        {loading ? <FaSpinner className="animate-spin" /> : <><FaUserEdit /> Update Profile</>}
+                        {loading ? <FaSpinner className="animate-spin inline-block" /> : 'Update All & Logout'}
                     </button>
+                    
                     <button
                         type="button"
                         onClick={() => navigate('/dashboard')}
