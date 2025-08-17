@@ -4,6 +4,8 @@ import User from "../models/User.js";
 import Notification from "../models/Notification.js";
 import mongoose from "mongoose";
 
+// dummy
+
 const sendDirectMessage = asyncHandler(async (req, res) => {
     const { recipientId, content } = req.body;
     const { _id: senderId } = req.user;
