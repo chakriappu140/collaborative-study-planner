@@ -21,7 +21,6 @@ const sendDirectMessage = asyncHandler(async (req, res) => {
 
     await newMessage.populate('sender', 'name');
 
-    // Emit 'dm:new' event to the recipient's private room
     req.io.to(recipientId.toString()).emit("dm:new", newMessage);
     
     res.status(201).json(newMessage);
@@ -59,18 +58,22 @@ const markMessagesAsRead = asyncHandler(async (req, res) => {
             { $set: { isRead: true } }
         );
 
-        // Emit 'dm:read' event to the sender's private room
-        req.io.to(recipientId.toString()).emit('dm:read'); // Don't need to pass userId, just the event name
+        req.io.to(recipientId.toString()).emit('dm:read');
     }
 
     res.status(200).json({ message: "Messages marked as read" });
 });
 
 const getUnreadDMCounts = asyncHandler(async (req, res) => {
+    // CRITICAL FIX: Ensure user is authenticated and the user object exists.
+    if (!req.user || !req.user._id) {
+        res.status(401);
+        throw new Error("User not authenticated or user ID is missing.");
+    }
+    
     const { _id: userId } = req.user;
 
-    // Add a check to ensure the user ID is valid
-    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
         res.status(400);
         throw new Error("Invalid user ID provided.");
     }

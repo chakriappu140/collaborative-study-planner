@@ -11,7 +11,7 @@ const DirectMessagesModal = ({ onClose, onUnreadCountChange, initialUnreadCounts
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
     const [loading, setLoading] = useState(true);
-    const [unreadCounts, setUnreadCounts] = useState(initialUnreadCounts); // Use the prop for initial state
+    const [unreadCounts, setUnreadCounts] = useState(initialUnreadCounts);
     const messagesEndRef = useRef(null);
 
     const fetchAllUsers = async () => {
@@ -25,22 +25,6 @@ const DirectMessagesModal = ({ onClose, onUnreadCountChange, initialUnreadCounts
         }
     };
     
-    // We no longer need this function as the parent handles the initial fetch
-    // const fetchUnreadCounts = async () => {
-    //     try {
-    //         const res = await axiosInstance.get('/api/messages/direct/unread-counts');
-    //         const counts = res.data.reduce((acc, curr) => {
-    //             acc[curr._id] = curr.count;
-    //             return acc;
-    //         }, {});
-    //         setUnreadCounts(counts);
-    //         const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
-    //         onUnreadCountChange(total);
-    //     } catch (err) {
-    //         console.error("Failed to fetch unread DM counts:", err);
-    //     }
-    // };
-
     const fetchMessages = async (recipientId) => {
         try {
             const res = await axiosInstance.get(`/api/messages/direct/${recipientId}`);

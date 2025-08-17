@@ -19,6 +19,7 @@ const Dashboard = () => {
     const [loadingGroups, setLoadingGroups] = useState(true);
     const [initialInviteToken, setInitialInviteToken] = useState(null);
     const [totalUnreadDMs, setTotalUnreadDMs] = useState(0);
+    const [unreadDMCounts, setUnreadDMCounts] = useState({});
 
     useEffect(() => {
         const fetchUnreadCount = async () => {
@@ -36,7 +37,6 @@ const Dashboard = () => {
                 console.error("Failed to fetch total unread DMs:", err);
             }
         };
-        fetchUnreadCount();
         
         const dmReadHandler = () => {
             fetchUnreadCount();
@@ -47,6 +47,7 @@ const Dashboard = () => {
         };
 
         if (user && socket) {
+            fetchUnreadCount(); // Initial fetch
             socket.on('dm:read', dmReadHandler);
             socket.on('dm:new', dmNewHandler);
             return () => {
