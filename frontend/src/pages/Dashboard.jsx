@@ -6,17 +6,19 @@ import JoinGroupModal from '../components/JoinGroupModal.jsx';
 import NotificationBell from '../components/NotificationBell.jsx';
 import DirectMessagesModal from '../components/DirectMessagesModal.jsx';
 import { FaUserCircle, FaPaperPlane } from 'react-icons/fa';
+import { useSocket } from '../context/SocketContext.jsx';
 
 const Dashboard = () => {
     const { user, logout, axiosInstance } = useAuth();
     const navigate = useNavigate();
+    const socket = useSocket();
     const [groups, setGroups] = useState([]);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
     const [isDMsModalOpen, setIsDMsModalOpen] = useState(false);
     const [loadingGroups, setLoadingGroups] = useState(true);
     const [initialInviteToken, setInitialInviteToken] = useState(null);
-    const [totalUnreadDMs, setTotalUnreadDMs] = useState(0); // NEW STATE
+    const [totalUnreadDMs, setTotalUnreadDMs] = useState(0);
 
     useEffect(() => {
         const fetchGroups = async () => {
@@ -40,7 +42,6 @@ const Dashboard = () => {
         }
     }, [user, axiosInstance]);
 
-    // NEW: Fetch and update total unread DMs
     useEffect(() => {
         const fetchUnreadCount = async () => {
             if (!user) return;
@@ -159,7 +160,15 @@ const Dashboard = () => {
                 />
             )}
             {isDMsModalOpen && (
-                <DirectMessagesModal onClose={() => setIsDMsModalOpen(false)} />
+                <DirectMessagesModal 
+                    onClose={() => {
+                        setIsDMsModalOpen(false);
+                        // Resetting the total unread count on close
+                        // This is a stylistic choice, could also refetch
+                        setTotalUnreadDMs(0); 
+                    }} 
+                    onUnreadCountChange={setTotalUnreadDMs} 
+                />
             )}
         </div>
     );
