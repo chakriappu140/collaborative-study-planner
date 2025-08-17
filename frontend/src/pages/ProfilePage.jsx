@@ -62,15 +62,18 @@ const ProfilePage = () => {
         formData.append('avatar', avatarFile);
 
         try {
-            await axiosInstance.put('/api/users/profile', formData, {
+            const res = await axiosInstance.put('/api/users/profile', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
             });
             setMessage('Avatar uploaded successfully!');
-            // We need to re-fetch user data to get the new avatar URL
-            const res = await axiosInstance.get('/api/users/profile');
-            setUploadedAvatarUrl(res.data.avatar);
+            const updatedUserData = res.data;
+            if (updatedUserData.token) {
+                localStorage.setItem('token', updatedUserData.token);
+            }
+            setUploadedAvatarUrl(updatedUserData.avatar);
+            setAvatarFile(null);
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to upload avatar.');
         } finally {
@@ -84,7 +87,11 @@ const ProfilePage = () => {
         setMessage('');
         
         try {
-            await axiosInstance.put('/api/users/profile', { name, email }, { headers: { 'Content-Type': 'application/json' } });
+            const res = await axiosInstance.put('/api/users/profile', { name, email }, { headers: { 'Content-Type': 'application/json' } });
+            const updatedUserData = res.data;
+            if (updatedUserData.token) {
+                localStorage.setItem('token', updatedUserData.token);
+            }
             setMessage('Profile information updated successfully.');
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to update profile information.');
@@ -104,7 +111,11 @@ const ProfilePage = () => {
         setMessage('');
 
         try {
-            await axiosInstance.put('/api/users/profile', { password }, { headers: { 'Content-Type': 'application/json' } });
+            const res = await axiosInstance.put('/api/users/profile', { password }, { headers: { 'Content-Type': 'application/json' } });
+            const updatedUserData = res.data;
+            if (updatedUserData.token) {
+                localStorage.setItem('token', updatedUserData.token);
+            }
             setMessage('Password updated successfully.');
             setPassword('');
             setConfirmPassword('');
@@ -137,7 +148,7 @@ const ProfilePage = () => {
         }
 
         try {
-            const res = await axiosInstance.put('/api/users/profile', formData, {
+            await axiosInstance.put('/api/users/profile', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
@@ -148,7 +159,6 @@ const ProfilePage = () => {
             setTimeout(() => navigate('/login'), 2000);
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to update profile.');
-        } finally {
             setLoading(false);
         }
     };
@@ -194,7 +204,7 @@ const ProfilePage = () => {
                             type="text"
                             value={name}
                             onChange={e => setName(e.target.value)}
-                            className="w-full px-3 py-2 mb-3 rounded bg-gray-700 border border-gray-600 text-white"
+                            className="w-full px-3 py-2 rounded bg-gray-700 border border-gray-600 text-white"
                             required
                         />
                         <label className="block mb-2 text-gray-400">Email</label>
