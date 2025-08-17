@@ -16,6 +16,7 @@ const Dashboard = () => {
     const [isDMsModalOpen, setIsDMsModalOpen] = useState(false);
     const [loadingGroups, setLoadingGroups] = useState(true);
     const [initialInviteToken, setInitialInviteToken] = useState(null);
+    const [totalUnreadDMs, setTotalUnreadDMs] = useState(0); // NEW STATE
 
     useEffect(() => {
         const fetchGroups = async () => {
@@ -39,6 +40,34 @@ const Dashboard = () => {
         }
     }, [user, axiosInstance]);
 
+    // NEW: Fetch and update total unread DMs
+    useEffect(() => {
+        const fetchUnreadCount = async () => {
+            if (!user) return;
+            try {
+                const res = await axiosInstance.get('/api/messages/direct/unread-counts');
+                const totalCount = res.data.reduce((sum, item) => sum + item.count, 0);
+                setTotalUnreadDMs(totalCount);
+            } catch (err) {
+                console.error("Failed to fetch total unread DMs:", err);
+            }
+        };
+
+        const dmReadHandler = (readByUserId) => {
+            if (readByUserId === user._id) {
+                fetchUnreadCount();
+            }
+        };
+
+        if (user && socket) {
+            fetchUnreadCount();
+            socket.on('dm:read', dmReadHandler);
+            return () => {
+                socket.off('dm:read', dmReadHandler);
+            }
+        }
+    }, [user, axiosInstance, socket]);
+
     const handleLogout = () => {
         logout();
         navigate('/login');
@@ -59,10 +88,15 @@ const Dashboard = () => {
                     </Link>
                     <button
                         onClick={() => setIsDMsModalOpen(true)}
-                        className="p-2 rounded-full text-white bg-gray-700 hover:bg-gray-600 transition-colors"
+                        className="relative p-2 rounded-full text-white bg-gray-700 hover:bg-gray-600 transition-colors"
                         title="Direct Messages"
                     >
                         <FaPaperPlane className="w-5 h-5" />
+                        {totalUnreadDMs > 0 && (
+                            <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 bg-red-600 rounded-full">
+                                {totalUnreadDMs}
+                            </span>
+                        )}
                     </button>
                     <button
                         onClick={handleLogout}

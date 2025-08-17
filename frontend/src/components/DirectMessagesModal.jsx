@@ -3,7 +3,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { useSocket } from "../context/SocketContext.jsx";
 import { FaPaperPlane, FaUserCircle, FaTimes, FaSpinner } from "react-icons/fa";
 
-const DirectMessagesModal = ({ onClose }) => {
+const DirectMessagesModal = ({ onClose, onUnreadCountChange }) => {
     const { axiosInstance, user } = useAuth();
     const socket = useSocket();
     const [allUsers, setAllUsers] = useState([]);
@@ -25,7 +25,6 @@ const DirectMessagesModal = ({ onClose }) => {
         }
     };
     
-    // NEW: Fetch unread DM counts
     const fetchUnreadCounts = async () => {
         try {
             const res = await axiosInstance.get('/api/messages/direct/unread-counts');
@@ -34,6 +33,8 @@ const DirectMessagesModal = ({ onClose }) => {
                 return acc;
             }, {});
             setUnreadCounts(counts);
+            const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
+            onUnreadCountChange(total);
         } catch (err) {
             console.error("Failed to fetch unread DM counts:", err);
         }
@@ -43,7 +44,6 @@ const DirectMessagesModal = ({ onClose }) => {
         try {
             const res = await axiosInstance.get(`/api/messages/direct/${recipientId}`);
             setMessages(res.data);
-            // Mark messages as read when conversation is opened
             await axiosInstance.put(`/api/messages/direct/read/${recipientId}`);
             setUnreadCounts(prev => ({ ...prev, [recipientId]: 0 }));
         } catch (err) {
@@ -62,17 +62,16 @@ const DirectMessagesModal = ({ onClose }) => {
         }
         if (socket && user) {
             const dmHandler = (newDM) => {
-                // If the DM is for the currently open chat, add it
                 if (recipient && newDM.sender._id === recipient._id) {
                     setMessages(prev => [...prev, newDM]);
-                    // Optimistically mark as read on the backend
                     axiosInstance.put(`/api/messages/direct/read/${recipient._id}`);
+                    onUnreadCountChange(prev => prev - 1);
                 } else {
-                    // Otherwise, update the unread count
                     setUnreadCounts(prev => ({
                         ...prev,
                         [newDM.sender._id]: (prev[newDM.sender._id] || 0) + 1
                     }));
+                    onUnreadCountChange(prev => prev + 1);
                 }
             };
             socket.on('dm:new', dmHandler);
