@@ -160,7 +160,13 @@ const Dashboard = () => {
                 />
             )}
             {isDMsModalOpen && (
-                <DirectMessagesModal onClose={() => setIsDMsModalOpen(false)} />
+                <DirectMessagesModal 
+                    onClose={() => {
+                        setIsDMsModalOpen(false);
+                        setTotalUnreadDMs(0); 
+                    }} 
+                    onUnreadCountChange={setTotalUnreadDMs} 
+                />
             )}
         </div>
     );
