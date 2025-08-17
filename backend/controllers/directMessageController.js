@@ -2,6 +2,7 @@ import asyncHandler from "express-async-handler";
 import DirectMessage from "../models/DirectMessage.js";
 import User from "../models/User.js";
 import Notification from "../models/Notification.js";
+import mongoose from "mongoose";
 
 const sendDirectMessage = asyncHandler(async (req, res) => {
     const { recipientId, content } = req.body;
@@ -20,7 +21,6 @@ const sendDirectMessage = asyncHandler(async (req, res) => {
 
     await newMessage.populate('sender', 'name');
 
-    // Emit a real-time event to the recipient's private room
     req.io.to(recipientId.toString()).emit("dm:new", newMessage);
     
     res.status(201).json(newMessage);
@@ -69,7 +69,7 @@ const getUnreadDMCounts = asyncHandler(async (req, res) => {
     const unreadCounts = await DirectMessage.aggregate([
         {
             $match: {
-                recipient: mongoose.Types.ObjectId(userId), // Fix for ObjectId
+                recipient: new mongoose.Types.ObjectId(userId),
                 isRead: false
             }
         },

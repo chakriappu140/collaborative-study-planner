@@ -11,7 +11,7 @@ const DirectMessagesModal = ({ onClose }) => {
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
     const [loading, setLoading] = useState(true);
-    const [unreadCounts, setUnreadCounts] = useState({}); // NEW STATE
+    const [unreadCounts, setUnreadCounts] = useState({});
     const messagesEndRef = useRef(null);
 
     const fetchAllUsers = async () => {
@@ -191,8 +191,3 @@ const DirectMessagesModal = ({ onClose }) => {
 };
 
 export default DirectMessagesModal;
-
-
-
-
-// frontend/src/pages/Dashboard.jsx
