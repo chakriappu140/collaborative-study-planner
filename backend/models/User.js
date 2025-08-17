@@ -13,6 +13,10 @@ const userSchema = mongoose.Schema({
     password: {
         type: String,
         required: true
+    },
+    avatar: { // NEW FIELD
+        type: String,
+        default: 'https://res.cloudinary.com/your-cloud-name/image/upload/v1600000000/default_avatar.png' // Provide a default avatar URL
     }
 },
 {timestamps: true})

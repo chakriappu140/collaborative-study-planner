@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useNavigate } from 'react-router-dom';
-import { FaUserEdit, FaSpinner } from 'react-icons/fa';
+import { FaUserEdit, FaSpinner, FaUserCircle } from 'react-icons/fa';
 
 const ProfilePage = () => {
     const { user, axiosInstance, logout } = useAuth();
@@ -10,6 +10,8 @@ const ProfilePage = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [avatar, setAvatar] = useState(null);
+    const [avatarPreview, setAvatarPreview] = useState('');
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
@@ -21,6 +23,7 @@ const ProfilePage = () => {
                     const res = await axiosInstance.get('/api/users/profile');
                     setName(res.data.name);
                     setEmail(res.data.email);
+                    setAvatarPreview(res.data.avatar);
                 } catch (err) {
                     console.error('Failed to fetch user profile:', err);
                     setError('Failed to load profile data.');
@@ -30,27 +33,42 @@ const ProfilePage = () => {
         fetchUserProfile();
     }, [user, axiosInstance]);
 
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        setAvatar(file);
+        if (file) {
+            setAvatarPreview(URL.createObjectURL(file));
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setMessage('');
         setError('');
         setLoading(true);
 
-        if (password !== confirmPassword) {
+        if (password && password !== confirmPassword) {
             setError('Passwords do not match.');
             setLoading(false);
             return;
         }
 
-        const userData = {
-            name,
-            email,
-            ...(password && { password }) // Only include password if it's provided
-        };
+        const formData = new FormData();
+        formData.append('name', name);
+        formData.append('email', email);
+        if (password) {
+            formData.append('password', password);
+        }
+        if (avatar) {
+            formData.append('avatar', avatar);
+        }
 
         try {
-            const res = await axiosInstance.put('/api/users/profile', userData);
-            // On successful update, log the user out to force a new token to be generated.
+            await axiosInstance.put('/api/users/profile', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
             logout();
             setMessage('Profile updated successfully! Please log in again.');
             setTimeout(() => navigate('/login'), 2000);
@@ -70,6 +88,21 @@ const ProfilePage = () => {
                 {error && <p className="text-red-500 text-center mb-4">{error}</p>}
                 
                 <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="flex justify-center mb-4">
+                        {avatarPreview ? (
+                            <img src={avatarPreview} alt="Avatar" className="w-32 h-32 rounded-full object-cover" />
+                        ) : (
+                            <FaUserCircle size={128} className="text-gray-500" />
+                        )}
+                    </div>
+                    <div>
+                        <label className="block text-gray-400">Profile Picture</label>
+                        <input
+                            type="file"
+                            onChange={handleFileChange}
+                            className="w-full text-white bg-gray-700 border border-gray-600 rounded p-2"
+                        />
+                    </div>
                     <div>
                         <label className="block text-gray-400">Name</label>
                         <input

@@ -19,7 +19,6 @@ const Dashboard = () => {
     const [loadingGroups, setLoadingGroups] = useState(true);
     const [initialInviteToken, setInitialInviteToken] = useState(null);
     const [totalUnreadDMs, setTotalUnreadDMs] = useState(0);
-    const [unreadDMCounts, setUnreadDMCounts] = useState({});
 
     useEffect(() => {
         const fetchUnreadCount = async () => {
@@ -30,7 +29,6 @@ const Dashboard = () => {
                     acc[curr._id] = curr.count;
                     return acc;
                 }, {});
-                setUnreadDMCounts(counts);
                 const totalCount = Object.values(counts).reduce((sum, item) => sum + item, 0);
                 setTotalUnreadDMs(totalCount);
             } catch (err) {
@@ -47,13 +45,13 @@ const Dashboard = () => {
         };
 
         if (user && socket) {
-            fetchUnreadCount(); // Initial fetch
+            fetchUnreadCount();
             socket.on('dm:read', dmReadHandler);
             socket.on('dm:new', dmNewHandler);
             return () => {
                 socket.off('dm:read', dmReadHandler);
                 socket.off('dm:new', dmNewHandler);
-            };
+            }
         }
     }, [user, axiosInstance, socket]);
 
@@ -91,7 +89,14 @@ const Dashboard = () => {
     return (
         <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center p-8">
             <div className="w-full max-w-4xl flex justify-between items-center mb-8">
-                <h1 className="text-4xl font-bold">Welcome, {user?.name}!</h1>
+                <div className="flex items-center space-x-4">
+                    {user?.avatar ? (
+                        <img src={user.avatar} alt="Avatar" className="w-10 h-10 rounded-full object-cover" />
+                    ) : (
+                        <FaUserCircle size={40} className="text-gray-500" />
+                    )}
+                    <h1 className="text-4xl font-bold">Welcome, {user?.name}!</h1>
+                </div>
                 <div className="flex space-x-4 items-center">
                     <NotificationBell />
                     <Link to="/profile" className="p-2 rounded-full text-white bg-gray-700 hover:bg-gray-600 transition-colors">
@@ -173,7 +178,6 @@ const Dashboard = () => {
                 <DirectMessagesModal 
                     onClose={() => setIsDMsModalOpen(false)} 
                     onUnreadCountChange={setTotalUnreadDMs} 
-                    initialUnreadCounts={unreadDMCounts}
                 />
             )}
         </div>

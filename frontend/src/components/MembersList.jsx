@@ -11,7 +11,11 @@ const MembersList = ({ members }) => {
                 ) : (
                     members.map(member => (
                         <div key={member._id} className="bg-gray-700 p-4 rounded-lg flex items-center space-x-4">
-                            <FaUserCircle size={24} className="text-gray-400" />
+                            {member.avatar ? (
+                                <img src={member.avatar} alt="Avatar" className="w-10 h-10 rounded-full object-cover" />
+                            ) : (
+                                <FaUserCircle size={40} className="text-gray-400" />
+                            )}
                             <div>
                                 <p className="text-white font-semibold">{member.name}</p>
                                 <p className="text-gray-400 text-sm">{member.email}</p>

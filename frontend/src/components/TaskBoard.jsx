@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useSocket } from '../context/SocketContext.jsx';
-import { FaPlus, FaTrash } from 'react-icons/fa';
+import { FaPlus, FaTrash, FaUserCircle } from 'react-icons/fa';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import moment from 'moment';
 import TaskModal from './TaskModal.jsx';
@@ -67,7 +67,6 @@ const TaskBoard = ({ groupId, members }) => {
         e.preventDefault();
         if (!title.trim()) return;
         try {
-            // NEW: Send default priority as 'Low'
             await axiosInstance.post(`/api/groups/${groupId}/tasks`, { title, priority: 'Low' });
             setTitle('');
         } catch (err) {
@@ -158,7 +157,14 @@ const TaskBoard = ({ groupId, members }) => {
                                                                 </span>
                                                             </div>
                                                             {task.assignedTo && (
-                                                                <p className="text-sm text-gray-400">Assigned to: {task.assignedTo.name}</p>
+                                                                <div className="flex items-center space-x-2 mt-2">
+                                                                    {task.assignedTo.avatar ? (
+                                                                        <img src={task.assignedTo.avatar} alt="Avatar" className="w-6 h-6 rounded-full object-cover" />
+                                                                    ) : (
+                                                                        <FaUserCircle size={24} className="text-gray-400" />
+                                                                    )}
+                                                                    <p className="text-sm text-gray-400">Assigned to: {task.assignedTo.name}</p>
+                                                                </div>
                                                             )}
                                                             {task.dueDate && (
                                                                 <p className="text-sm text-gray-400">Due: {moment(task.dueDate).format('MMM Do, h:mm a')}</p>
