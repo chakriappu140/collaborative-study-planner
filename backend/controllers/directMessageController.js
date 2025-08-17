@@ -69,6 +69,12 @@ const markMessagesAsRead = asyncHandler(async (req, res) => {
 const getUnreadDMCounts = asyncHandler(async (req, res) => {
     const { _id: userId } = req.user;
 
+    // Add a check to ensure the user ID is valid
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+        res.status(400);
+        throw new Error("Invalid user ID provided.");
+    }
+
     const unreadCounts = await DirectMessage.aggregate([
         {
             $match: {
