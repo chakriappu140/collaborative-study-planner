@@ -54,18 +54,24 @@ const Dashboard = () => {
             }
         };
 
-        const dmReadHandler = (readByUserId) => {
-            if (readByUserId === user._id) {
-                fetchUnreadCount();
-            }
+        const dmReadHandler = () => {
+            fetchUnreadCount();
+        };
+
+        const dmNewHandler = () => {
+            fetchUnreadCount();
         };
 
         if (user && socket) {
             fetchUnreadCount();
+            // Listen for read events
             socket.on('dm:read', dmReadHandler);
+            // Listen for new message events
+            socket.on('dm:new', dmNewHandler);
             return () => {
                 socket.off('dm:read', dmReadHandler);
-            }
+                socket.off('dm:new', dmNewHandler);
+            };
         }
     }, [user, axiosInstance, socket]);
 
@@ -161,10 +167,7 @@ const Dashboard = () => {
             )}
             {isDMsModalOpen && (
                 <DirectMessagesModal 
-                    onClose={() => {
-                        setIsDMsModalOpen(false);
-                        setTotalUnreadDMs(0); 
-                    }} 
+                    onClose={() => setIsDMsModalOpen(false)} 
                     onUnreadCountChange={setTotalUnreadDMs} 
                 />
             )}

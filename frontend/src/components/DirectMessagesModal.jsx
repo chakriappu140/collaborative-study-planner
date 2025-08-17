@@ -44,9 +44,13 @@ const DirectMessagesModal = ({ onClose, onUnreadCountChange }) => {
         try {
             const res = await axiosInstance.get(`/api/messages/direct/${recipientId}`);
             setMessages(res.data);
-            await axiosInstance.put(`/api/messages/direct/read/${recipientId}`);
-            setUnreadCounts(prev => ({ ...prev, [recipientId]: 0 }));
-            onUnreadCountChange(prev => prev - (unreadCounts[recipientId] || 0));
+            const oldUnreadCount = unreadCounts[recipientId] || 0;
+            if (oldUnreadCount > 0) {
+                await axiosInstance.put(`/api/messages/direct/read/${recipientId}`);
+                setUnreadCounts(prev => ({ ...prev, [recipientId]: 0 }));
+                // Correctly update the parent component's state
+                onUnreadCountChange(prevTotal => prevTotal - oldUnreadCount);
+            }
         } catch (err) {
             console.error("Failed to fetch messages:", err);
         }
@@ -63,16 +67,21 @@ const DirectMessagesModal = ({ onClose, onUnreadCountChange }) => {
         }
         if (socket && user) {
             const dmHandler = (newDM) => {
+                // If a new DM arrives for the currently open chat, update messages and mark it as read
                 if (recipient && newDM.sender._id === recipient._id) {
                     setMessages(prev => [...prev, newDM]);
                     axiosInstance.put(`/api/messages/direct/read/${recipient._id}`);
-                    onUnreadCountChange(prev => prev - 1);
                 } else {
-                    setUnreadCounts(prev => ({
-                        ...prev,
-                        [newDM.sender._id]: (prev[newDM.sender._id] || 0) + 1
-                    }));
-                    onUnreadCountChange(prev => prev + 1);
+                    // If the new DM is for a different user, update unread count for that user
+                    setUnreadCounts(prev => {
+                        const newCount = (prev[newDM.sender._id] || 0) + 1;
+                        // Correctly update the total count in the parent Dashboard component
+                        onUnreadCountChange(prevTotal => prevTotal + 1);
+                        return {
+                            ...prev,
+                            [newDM.sender._id]: newCount
+                        };
+                    });
                 }
             };
             socket.on('dm:new', dmHandler);
@@ -80,7 +89,7 @@ const DirectMessagesModal = ({ onClose, onUnreadCountChange }) => {
                 socket.off('dm:new', dmHandler);
             };
         }
-    }, [recipient, socket, user]);
+    }, [recipient, socket, user, onUnreadCountChange, unreadCounts]); // Added dependencies for correct closure behavior
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
