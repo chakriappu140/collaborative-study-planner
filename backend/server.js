@@ -11,7 +11,7 @@ import calendarRoutes from './routes/calendarRoutes.js';
 import messageRoutes from './routes/messageRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import fileRoutes from './routes/fileRoutes.js';
-import directMessageRoutes from './routes/directMessageRoutes.js'; // NEW IMPORT
+import directMessageRoutes from './routes/directMessageRoutes.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 import path from "path";
 import fs from "fs";
@@ -25,7 +25,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
     cors: {
-        origin: '*', 
+        origin: '*',
         methods: ['GET', 'POST', 'PUT', 'DELETE'],
     },
 });
@@ -34,6 +34,7 @@ const io = new Server(server, {
 app.use(express.json());
 app.use(cors());
 
+// Make Socket.IO instance available to all routes
 app.use((req, res, next) => {
     req.io = io;
     next();
@@ -47,7 +48,7 @@ app.use('/api/groups/:groupId/calendar', calendarRoutes);
 app.use("/api/groups/:groupId/messages", messageRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/groups/:groupId/files", fileRoutes);
-app.use("/api/messages/direct", directMessageRoutes); // NEW ROUTE
+app.use("/api/messages/direct", directMessageRoutes);
 
 // Serve uploaded files statically
 const __dirname = path.resolve();
@@ -68,6 +69,12 @@ app.use(errorHandler);
 // Socket.IO connections
 io.on('connection', (socket) => {
     console.log('🔗 A user connected with id:', socket.id);
+    const userId = socket.handshake.query.userId;
+    if (userId) {
+        // Join the user into a private room named after their user ID
+        socket.join(userId);
+        console.log(`🔗 User ${userId} connected and joined their private room.`);
+    }
 
     socket.on('joinGroup', (groupId) => {
         socket.join(groupId);

@@ -21,6 +21,7 @@ const sendDirectMessage = asyncHandler(async (req, res) => {
 
     await newMessage.populate('sender', 'name');
 
+    // Emit 'dm:new' event to the recipient's private room
     req.io.to(recipientId.toString()).emit("dm:new", newMessage);
     
     res.status(201).json(newMessage);
@@ -42,27 +43,29 @@ const getDirectMessages = asyncHandler(async (req, res) => {
     res.status(200).json(messages);
 });
 
-// @desc    Mark all messages in a conversation as read
-// @route   PUT /api/messages/direct/read/:recipientId
-// @access  Private
 const markMessagesAsRead = asyncHandler(async (req, res) => {
     const { recipientId } = req.params;
     const { _id: userId } = req.user;
 
-    await DirectMessage.updateMany(
-        { sender: recipientId, recipient: userId, isRead: false },
-        { $set: { isRead: true } }
-    );
+    const messagesToUpdate = await DirectMessage.find({ 
+        sender: recipientId, 
+        recipient: userId, 
+        isRead: false 
+    });
 
-    // Emit an event to the sender that the messages have been read
-    req.io.to(recipientId.toString()).emit('dm:read', userId);
+    if (messagesToUpdate.length > 0) {
+        await DirectMessage.updateMany(
+            { _id: { $in: messagesToUpdate.map(msg => msg._id) } },
+            { $set: { isRead: true } }
+        );
+
+        // Emit 'dm:read' event to the sender's private room
+        req.io.to(recipientId.toString()).emit('dm:read'); // Don't need to pass userId, just the event name
+    }
 
     res.status(200).json({ message: "Messages marked as read" });
 });
 
-// @desc    Get the number of unread direct messages per user
-// @route   GET /api/messages/direct/unread-counts
-// @access  Private
 const getUnreadDMCounts = asyncHandler(async (req, res) => {
     const { _id: userId } = req.user;
 

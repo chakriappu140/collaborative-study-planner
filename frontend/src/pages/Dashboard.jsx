@@ -64,9 +64,7 @@ const Dashboard = () => {
 
         if (user && socket) {
             fetchUnreadCount();
-            // Listen for read events
             socket.on('dm:read', dmReadHandler);
-            // Listen for new message events
             socket.on('dm:new', dmNewHandler);
             return () => {
                 socket.off('dm:read', dmReadHandler);
