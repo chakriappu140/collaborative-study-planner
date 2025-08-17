@@ -1,3 +1,4 @@
+// frontend/src/components/DirectMessagesModal.jsx
 import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useSocket } from "../context/SocketContext.jsx";
@@ -25,6 +26,21 @@ const DirectMessagesModal = ({ onClose, onUnreadCountChange, initialUnreadCounts
         }
     };
     
+    const fetchUnreadCounts = async () => {
+        try {
+            const res = await axiosInstance.get('/api/messages/direct/unread-counts');
+            const counts = res.data.reduce((acc, curr) => {
+                acc[curr._id] = curr.count;
+                return acc;
+            }, {});
+            setUnreadCounts(counts);
+            const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
+            onUnreadCountChange(total);
+        } catch (err) {
+            console.error("Failed to fetch unread DM counts:", err);
+        }
+    };
+
     const fetchMessages = async (recipientId) => {
         try {
             const res = await axiosInstance.get(`/api/messages/direct/${recipientId}`);
@@ -180,3 +196,4 @@ const DirectMessagesModal = ({ onClose, onUnreadCountChange, initialUnreadCounts
 };
 
 export default DirectMessagesModal;
+

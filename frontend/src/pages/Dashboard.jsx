@@ -47,7 +47,7 @@ const Dashboard = () => {
         };
 
         if (user && socket) {
-            fetchUnreadCount(); // Initial fetch
+            fetchUnreadCount();
             socket.on('dm:read', dmReadHandler);
             socket.on('dm:new', dmNewHandler);
             return () => {
@@ -170,9 +170,9 @@ const Dashboard = () => {
                 />
             )}
             {isDMsModalOpen && (
-                <DirectMessagesModal 
-                    onClose={() => setIsDMsModalOpen(false)} 
-                    onUnreadCountChange={setTotalUnreadDMs} 
+                <DirectMessagesModal
+                    onClose={() => setIsDMsModalOpen(false)}
+                    onUnreadCountChange={setTotalUnreadDMs}
                     initialUnreadCounts={unreadDMCounts}
                 />
             )}

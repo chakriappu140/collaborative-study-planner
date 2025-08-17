@@ -4,6 +4,9 @@ import User from "../models/User.js";
 import Notification from "../models/Notification.js";
 import mongoose from "mongoose";
 
+// @desc    Send a new direct message
+// @route   POST /api/messages/direct
+// @access  Private
 const sendDirectMessage = asyncHandler(async (req, res) => {
     const { recipientId, content } = req.body;
     const { _id: senderId } = req.user;
@@ -21,11 +24,15 @@ const sendDirectMessage = asyncHandler(async (req, res) => {
 
     await newMessage.populate('sender', 'name');
 
+    // Emit a real-time event to the recipient's private room
     req.io.to(recipientId.toString()).emit("dm:new", newMessage);
     
     res.status(201).json(newMessage);
 });
 
+// @desc    Get conversation history with a user
+// @route   GET /api/messages/direct/:recipientId
+// @access  Private
 const getDirectMessages = asyncHandler(async (req, res) => {
     const { recipientId } = req.params;
     const { _id: userId } = req.user;
@@ -42,30 +49,28 @@ const getDirectMessages = asyncHandler(async (req, res) => {
     res.status(200).json(messages);
 });
 
+// @desc    Mark all messages in a conversation as read
+// @route   PUT /api/messages/direct/read/:recipientId
+// @access  Private
 const markMessagesAsRead = asyncHandler(async (req, res) => {
     const { recipientId } = req.params;
     const { _id: userId } = req.user;
 
-    const messagesToUpdate = await DirectMessage.find({ 
-        sender: recipientId, 
-        recipient: userId, 
-        isRead: false 
-    });
+    await DirectMessage.updateMany(
+        { sender: recipientId, recipient: userId, isRead: false },
+        { $set: { isRead: true } }
+    );
 
-    if (messagesToUpdate.length > 0) {
-        await DirectMessage.updateMany(
-            { _id: { $in: messagesToUpdate.map(msg => msg._id) } },
-            { $set: { isRead: true } }
-        );
-
-        req.io.to(recipientId.toString()).emit('dm:read');
-    }
+    // Emit an event to the sender that the messages have been read
+    req.io.to(recipientId.toString()).emit('dm:read', userId);
 
     res.status(200).json({ message: "Messages marked as read" });
 });
 
+// @desc    Get the number of unread direct messages per user
+// @route   GET /api/messages/direct/unread-counts
+// @access  Private
 const getUnreadDMCounts = asyncHandler(async (req, res) => {
-    // CRITICAL FIX: Ensure user is authenticated and the user object exists.
     if (!req.user || !req.user._id) {
         res.status(401);
         throw new Error("User not authenticated or user ID is missing.");
