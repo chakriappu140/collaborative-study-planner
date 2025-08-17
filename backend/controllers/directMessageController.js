@@ -58,14 +58,13 @@ const markMessagesAsRead = asyncHandler(async (req, res) => {
             { $set: { isRead: true } }
         );
 
-        req.io.to(recipientId.toString()).emit('dm:read');
+        req.io.to(recipientId.toString()).emit('dm:read', userId);
     }
 
     res.status(200).json({ message: "Messages marked as read" });
 });
 
 const getUnreadDMCounts = asyncHandler(async (req, res) => {
-    // CRITICAL FIX: Ensure user is authenticated and the user object exists.
     if (!req.user || !req.user._id) {
         res.status(401);
         throw new Error("User not authenticated or user ID is missing.");
