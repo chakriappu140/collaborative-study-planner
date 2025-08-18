@@ -51,6 +51,10 @@ export const AuthProvider = ({ children }) => {
       credentials
     );
     localStorage.setItem("token", res.data.token);
+
+    // Manually update axiosInstance header before fetching profile
+    axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${res.data.token}`;
+
     await fetchProfile();
   };
 
@@ -60,6 +64,9 @@ export const AuthProvider = ({ children }) => {
       credentials
     );
     localStorage.setItem("token", res.data.token);
+
+    axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${res.data.token}`;
+
     await fetchProfile();
   };
 
@@ -75,8 +82,8 @@ export const AuthProvider = ({ children }) => {
     signup,
     logout,
     axiosInstance,
-    setUser, // Expose setUser in case profile page needs to update avatar immediately after update
-    fetchProfile // For ProfilePage, after profile/ avatar update
+    setUser,
+    fetchProfile,
   };
 
   return (
