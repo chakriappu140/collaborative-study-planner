@@ -60,7 +60,7 @@ const DirectMessagesModal = ({ onClose, initialRecipientId  }) => {
   useEffect(() => {
     if (allUsers.length > 0 && initialRecipientId) {
       const found = allUsers.find(u => u._id === initialRecipientId);
-      if (found) setRecipient(found);
+      if (found && (!recipient || recipient._id !== found._id)) setRecipient(found);
     }
   }, [allUsers, initialRecipientId]);
 
