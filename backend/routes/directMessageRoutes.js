@@ -10,10 +10,10 @@ router.route('/')
 router.route('/:recipientId')
     .get(protect, getDirectMessages);
 
-router.route('/read/:recipientId')
-    .put(protect, markMessagesAsRead);
+// router.route('/read/:recipientId')
+//     .put(protect, markMessagesAsRead);
 
-router.route('/unread-counts')
-    .get(protect, getUnreadDMCounts);
+// router.route('/unread-counts')
+//     .get(protect, getUnreadDMCounts);
 
 export default router;
