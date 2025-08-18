@@ -27,7 +27,7 @@ const createNotification = async (io, groupId, senderId, message, link) => {
   }
 };
 
-const getTasks = asyncHandler(async (req, res) => {
+const getGroupTasks = asyncHandler(async (req, res) => {
   const { groupId } = req.params;
 
   const tasks = await Task.find({ group: groupId }).populate('assignedTo', 'name avatar email');
@@ -164,4 +164,5 @@ const getTaskProgress = asyncHandler(async (req, res) => {
   res.status(200).json(progress);
 });
 
-export { getTasks, createTask, updateTask, deleteTask, getTaskProgress };
+export { getGroupTasks, createTask, updateTask, deleteTask, getTaskProgress };
+

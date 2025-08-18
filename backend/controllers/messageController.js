@@ -61,7 +61,7 @@ const sendMessage = asyncHandler(async (req, res) => {
   res.status(201).json(newMsg);
 });
 
-const getMessages = asyncHandler(async (req, res) => {
+const getGroupMessages = asyncHandler(async (req, res) => {
   const { groupId } = req.params;
 
   const messages = await Message.find({ group: groupId })
@@ -72,4 +72,5 @@ const getMessages = asyncHandler(async (req, res) => {
   res.status(200).json(messages);
 });
 
-export { createNotification, sendMessage, getMessages };
+export { createNotification, sendMessage, getGroupMessages };
+

@@ -95,7 +95,7 @@ const uploadFile = asyncHandler(async (req, res) => {
 // @desc Get all files for a group
 // @route GET /api/groups/:groupId/files
 // @access Private
-const getFiles = asyncHandler(async (req, res) => {
+const getGroupFiles = asyncHandler(async (req, res) => {
   const { groupId } = req.params;
 
   const files = await File.find({ group: groupId }).populate("uploader", "name avatar");
@@ -144,4 +144,5 @@ const deleteFile = asyncHandler(async (req, res) => {
   res.status(200).json({ message: "File deleted" });
 });
 
-export { upload, uploadFile, getFiles, deleteFile };
+export { upload, uploadFile, getGroupFiles, deleteFile };
+

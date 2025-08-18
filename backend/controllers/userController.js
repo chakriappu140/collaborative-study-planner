@@ -150,3 +150,4 @@ const getAllUsers = asyncHandler(async (req, res) => {
 });
 
 export { authUser, registerUser, getUserProfile, updateUserProfile, getAllUsers, upload };
+

@@ -56,3 +56,4 @@ const deleteNotification = asyncHandler(async (req, res) => {
 
 
 export {getMyNotifications, markNotificationAsRead, deleteAllNotifications, deleteNotification}
+

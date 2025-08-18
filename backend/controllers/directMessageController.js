@@ -68,7 +68,7 @@ const getDirectMessages = asyncHandler(async (req, res) => {
   res.status(200).json(messages);
 });
 
-const markMessagesRead = asyncHandler(async (req, res) => {
+const markMessagesAsRead = asyncHandler(async (req, res) => {
   const { recipientId } = req.params;
   const userId = req.user._id;
 
@@ -104,6 +104,7 @@ export {
   createNotification,
   sendDirectMessage,
   getDirectMessages,
-  markMessagesRead,
+  markMessagesAsRead,
   getUnreadCounts
 };
+
