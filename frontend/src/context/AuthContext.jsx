@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
-import axios from 'axios';
-import { jwtDecode } from 'jwt-decode';
+import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
+import axios from "axios";
+import { jwtDecode } from "jwt-decode";
 
 const AuthContext = createContext();
 
@@ -14,56 +14,57 @@ export const AuthProvider = ({ children }) => {
     const instance = axios.create({
       baseURL: import.meta.env.VITE_API_BASE_URL,
     });
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     if (token) {
-      instance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      instance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
     }
     return instance;
   }, [user]);
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      try {
-        const decoded = jwtDecode(token);
-        if (decoded.exp * 1000 > Date.now()) {
-          // Use decoded.id, decoded.name, and decoded.email to set user state
-          setUser({ _id: decoded.id, name: decoded.name, email: decoded.email });
-        } else {
-          localStorage.removeItem('token');
-        }
-      } catch (error) {
-        console.error("Invalid token:", error);
-        localStorage.removeItem('token');
-      }
+  // Fetch profile helper
+  const fetchProfile = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    try {
+      const { data } = await axiosInstance.get("/api/users/profile");
+      setUser({
+        _id: data._id,
+        name: data.name,
+        email: data.email,
+        avatar: data.avatar,
+      });
+    } catch (err) {
+      setUser(null);
+      localStorage.removeItem("token");
     }
-    setLoading(false);
+  };
+
+  // On mount, fetch fresh profile if token present
+  useEffect(() => {
+    fetchProfile().finally(() => setLoading(false));
+    // eslint-disable-next-line
   }, []);
 
   const login = async (credentials) => {
-    try {
-      const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/users/login`, credentials);
-      localStorage.setItem('token', res.data.token);
-      const decoded = jwtDecode(res.data.token);
-      setUser({ _id: decoded.id, name: res.data.name, email: res.data.email });
-    } catch (error) {
-      throw new Error(error.response?.data?.message || 'Login failed.');
-    }
+    const res = await axios.post(
+      `${import.meta.env.VITE_API_BASE_URL}/api/users/login`,
+      credentials
+    );
+    localStorage.setItem("token", res.data.token);
+    await fetchProfile();
   };
 
   const signup = async (credentials) => {
-    try {
-      const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/users`, credentials);
-      localStorage.setItem('token', res.data.token);
-      const decoded = jwtDecode(res.data.token);
-      setUser({ _id: decoded.id, name: res.data.name, email: res.data.email });
-    } catch (error) {
-      throw new Error(error.response?.data?.message || 'Sign up failed.');
-    }
+    const res = await axios.post(
+      `${import.meta.env.VITE_API_BASE_URL}/api/users`,
+      credentials
+    );
+    localStorage.setItem("token", res.data.token);
+    await fetchProfile();
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
+    localStorage.removeItem("token");
     setUser(null);
   };
 
@@ -74,11 +75,11 @@ export const AuthProvider = ({ children }) => {
     signup,
     logout,
     axiosInstance,
+    setUser, // Expose setUser in case profile page needs to update avatar immediately after update
+    fetchProfile // For ProfilePage, after profile/ avatar update
   };
 
   return (
-    <AuthContext.Provider value={value}>
-      {!loading && children}
-    </AuthContext.Provider>
+    <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>
   );
 };
