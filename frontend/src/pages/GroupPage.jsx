@@ -11,6 +11,7 @@ import ManageMembersModal from '../components/ManageMembersModal.jsx';
 import FileManagement from '../components/FileManagement.jsx';
 import ProgressDashboard from '../components/ProgressDashboard.jsx';
 import MembersList from '../components/MembersList.jsx';
+import Whiteboard from '../components/Whiteboard.jsx';
 
 const GroupPage = () => {
     const { groupId } = useParams();
@@ -124,6 +125,8 @@ const GroupPage = () => {
                 return <ProgressDashboard groupId={groupId} />;
             case 'members':
                 return <MembersList members={group.members} />;
+            case 'whiteboard':
+                return <Whiteboard groupId={groupId} />;
             default:
                 return null;
         }
@@ -183,6 +186,7 @@ const GroupPage = () => {
                     <button onClick={() => setActiveTab('files')} className={tabClasses('files')}>Files</button>
                     <button onClick={() => setActiveTab('progress')} className={tabClasses('progress')}>Progress</button>
                     <button onClick={() => setActiveTab('members')} className={tabClasses('members')}>Members</button>
+                    <button onClick={() => setActiveTab('whiteboard')} className={tabClasses('whiteboard')}>Whiteboard</button>
                 </div>
 
                 <div>

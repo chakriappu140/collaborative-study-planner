@@ -86,6 +86,10 @@ io.on('connection', (socket) => {
         console.log(`User ${socket.id} left group room: ${groupId}`);
     });
 
+    socket.on('drawing', (data) => {
+        socket.to(data.groupId).emit('drawing', data);
+    });
+
     socket.on('disconnect', () => {
         console.log('User disconnected with id:', socket.id);
     });
