@@ -3,73 +3,73 @@ import Message from "../models/Message.js";
 import Group from "../models/Group.js";
 import Notification from "../models/Notification.js";
 
-const createNotification = async (req, groupId, senderId, message, link) => {
+const createNotification = async (io, groupId, senderId, message, link) => {
   try {
     const group = await Group.findById(groupId);
     if (!group) return;
 
-    const membersToNotify = group.members.filter(member => member.toString() !== senderId.toString());
+    const recipients = group.members.filter(m => m.toString() !== senderId.toString());
 
-    const notifications = membersToNotify.map(memberId => ({
-      user: memberId,
+    const notifications = recipients.map(userId => ({
+      user: userId,
       message,
       link
     }));
 
-    const createdNotifications = await Notification.insertMany(notifications);
+    const created = await Notification.insertMany(notifications);
 
-    for (const notif of createdNotifications) {
-      req.io.to(notif.user.toString()).emit('notification:new', notif);
+    for (const notif of created) {
+      io.to(notif.user.toString()).emit('notification:new', notif);
     }
   } catch (error) {
-    console.error('Failed to create notification:', error);
+    console.error("Failed to create notifications", error);
   }
 };
 
 const sendMessage = asyncHandler(async (req, res) => {
   const { groupId } = req.params;
-  // ADD replyTo to the destructuring of req.body
   const { content, replyTo } = req.body;
-  const { _id: sender } = req.user;
+  const senderId = req.user._id;
 
   if (!content) {
     res.status(400);
-    throw new Error("Message content cannot be empty");
+    throw new Error("Message content required");
   }
 
-  const newMessage = await Message.create({
+  const newMsg = await Message.create({
     group: groupId,
-    sender,
+    sender: senderId,
     content,
-    replyTo: replyTo || null
+    replyTo: replyTo || null,
   });
 
-  await newMessage.populate('sender', 'name avatar email');
-  await newMessage.populate({
+  await newMsg.populate('sender', 'name avatar email');
+  await newMsg.populate({
     path: 'replyTo',
     populate: { path: 'sender', select: 'name avatar email' }
   });
 
-  req.io.to(groupId).emit("message:new", newMessage);
+  req.io.to(groupId).emit("message:new", newMsg);
 
   const group = await Group.findById(groupId);
   if (group) {
-    await createNotification(req, groupId, sender, `${req.user.name} sent a new message in ${group.name}`, `/groups/${groupId}`);
+    await createNotification(req.io, groupId, senderId,
+      `${req.user.name} sent a new message in ${group.name}`, `/groups/${groupId}`
+    );
   }
 
-  res.status(201).json(newMessage);
+  res.status(201).json(newMsg);
 });
 
-const getGroupMessages = asyncHandler(async (req, res) => {
+const getMessages = asyncHandler(async (req, res) => {
   const { groupId } = req.params;
+
   const messages = await Message.find({ group: groupId })
-    .populate('sender', 'name avatar email').populate({
-      path: 'replyTo',
-      populate: { path: 'sender', select: 'name avatar email' }
-    })
+    .populate('sender', 'name avatar email')
+    .populate({ path: 'replyTo', populate: { path: 'sender', select: 'name avatar email' } })
     .sort({ createdAt: 1 });
 
   res.status(200).json(messages);
 });
 
-export { sendMessage, getGroupMessages };
+export { createNotification, sendMessage, getMessages };

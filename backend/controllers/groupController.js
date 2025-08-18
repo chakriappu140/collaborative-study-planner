@@ -1,32 +1,32 @@
 import asyncHandler from "express-async-handler";
 import Group from "../models/Group.js";
 import User from "../models/User.js";
-import CalendarEvent from "../models/CalendarEvent.js";
-import Task from "../models/Task.js";
 import Notification from "../models/Notification.js";
+import Task from "../models/Task.js";
+import CalendarEvent from "../models/CalendarEvent.js";
 import crypto from "crypto";
 
-// Helper function to create notifications for group members
+// Helper for sending notifications to group members (excluding sender)
 const createNotification = async (io, groupId, senderId, message, link) => {
   try {
     const group = await Group.findById(groupId);
     if (!group) return;
 
-    const membersToNotify = group.members.filter(member => member.toString() !== senderId.toString());
+    const recipients = group.members.filter(m => m.toString() !== senderId.toString());
 
-    const notifications = membersToNotify.map(memberId => ({
-      user: memberId,
+    const notifications = recipients.map(userId => ({
+      user: userId,
       message,
       link
     }));
 
-    const createdNotifications = await Notification.insertMany(notifications);
+    const created = await Notification.insertMany(notifications);
 
-    for (const notif of createdNotifications) {
+    for (const notif of created) {
       io.to(notif.user.toString()).emit('notification:new', notif);
     }
   } catch (error) {
-    console.error('Failed to create notification:', error);
+    console.error("Failed to create notifications", error);
   }
 };
 
@@ -42,7 +42,7 @@ const createGroup = asyncHandler(async (req, res) => {
     name,
     description,
     admin: req.user._id,
-    members: [req.user._id]
+    members: [req.user._id],
   });
 
   const populatedGroup = await Group.findById(group._id).populate('members', 'name avatar email');
@@ -62,21 +62,18 @@ const getGroupDetails = asyncHandler(async (req, res) => {
   const { groupId } = req.params;
 
   const group = await Group.findById(groupId);
-
   if (!group) {
     res.status(404);
     throw new Error("Group not found");
   }
 
-  const isMember = group.members.some(memberId => memberId.toString() === req.user._id.toString());
-
+  const isMember = group.members.some(m => m.toString() === req.user._id.toString());
   if (!isMember) {
     res.status(403);
-    throw new Error("User is not a member of this group");
+    throw new Error("Not a member of this group");
   }
 
   const populatedGroup = await Group.findById(groupId).populate('members', 'name avatar email');
-
   res.status(200).json(populatedGroup);
 });
 
@@ -84,7 +81,6 @@ const deleteGroup = asyncHandler(async (req, res) => {
   const { groupId } = req.params;
 
   const group = await Group.findById(groupId);
-
   if (!group) {
     res.status(404);
     throw new Error("Group not found");
@@ -92,7 +88,7 @@ const deleteGroup = asyncHandler(async (req, res) => {
 
   if (group.admin.toString() !== req.user._id.toString()) {
     res.status(401);
-    throw new Error("User not authorized to delete this group");
+    throw new Error("Only admin can delete group");
   }
 
   await Task.deleteMany({ group: groupId });
@@ -101,20 +97,19 @@ const deleteGroup = asyncHandler(async (req, res) => {
 
   req.io.to(groupId).emit("group:deleted", groupId);
 
-  res.status(200).json({ message: "Group and all associated data removed" });
+  res.status(200).json({ message: "Group and related data deleted" });
 });
 
-const addMemberToGroup = asyncHandler(async (req, res) => {
+const addMember = asyncHandler(async (req, res) => {
   const { groupId } = req.params;
   const { email } = req.body;
 
   if (!email) {
     res.status(400);
-    throw new Error("User email is required");
+    throw new Error("Email is required");
   }
 
   const group = await Group.findById(groupId);
-
   if (!group) {
     res.status(404);
     throw new Error("Group not found");
@@ -122,19 +117,18 @@ const addMemberToGroup = asyncHandler(async (req, res) => {
 
   if (group.admin.toString() !== req.user._id.toString()) {
     res.status(401);
-    throw new Error("User not authorized to add members to this group");
+    throw new Error("Only admin can add members");
   }
 
   const userToAdd = await User.findOne({ email });
-
   if (!userToAdd) {
     res.status(404);
-    throw new Error("User with that email not found");
+    throw new Error("User not found");
   }
 
   if (group.members.includes(userToAdd._id)) {
     res.status(400);
-    throw new Error("User is already a member of this group");
+    throw new Error("User already in group");
   }
 
   group.members.push(userToAdd._id);
@@ -145,17 +139,24 @@ const addMemberToGroup = asyncHandler(async (req, res) => {
     member: { _id: userToAdd._id, name: userToAdd.name, avatar: userToAdd.avatar, email: userToAdd.email }
   });
 
+  // Notify the added user directly
+  const notif = await Notification.create({
+    user: userToAdd._id,
+    message: `You were added to ${group.name} by ${req.user.name}`,
+    link: `/groups/${groupId}`,
+  });
+  req.io.to(userToAdd._id.toString()).emit('notification:new', notif);
+
   res.status(200).json({
-    message: `${userToAdd.name} added to the group successfully`,
-    group
+    message: `Added ${userToAdd.name} to group`,
+    group,
   });
 });
 
-const generateInviteToken = asyncHandler(async (req, res) => {
-  const { groupId } = req.params;
+const removeMember = asyncHandler(async (req, res) => {
+  const { groupId, memberId } = req.params;
 
   const group = await Group.findById(groupId);
-
   if (!group) {
     res.status(404);
     throw new Error("Group not found");
@@ -163,23 +164,71 @@ const generateInviteToken = asyncHandler(async (req, res) => {
 
   if (group.admin.toString() !== req.user._id.toString()) {
     res.status(401);
-    throw new Error("User not authorized to generate an invite link");
+    throw new Error("Only admin can remove members");
   }
 
-  const inviteToken = crypto.randomBytes(20).toString('hex');
-  const inviteTokenExpires = Date.now() + 3600000;
+  if (memberId === req.user._id.toString()) {
+    res.status(400);
+    throw new Error("Cannot remove yourself");
+  }
 
-  group.inviteToken = inviteToken;
-  group.inviteTokenExpires = inviteTokenExpires;
+  const memberExists = group.members.some(m => m.toString() === memberId);
+  if (!memberExists) {
+    res.status(404);
+    throw new Error("User not in group");
+  }
 
-  await group.save();
+  const removedMember = await User.findById(memberId);
 
-  res.status(200).json({ inviteToken });
+  group.members.pull(memberId);
+  const savedGroup = await group.save();
+
+  req.io.to(groupId).emit("group:member_removed", { memberId, group: savedGroup });
+
+  // Notify the removed user directly
+  if (removedMember) {
+    const notif = await Notification.create({
+      user: removedMember._id,
+      message: `You were removed from ${group.name} by ${req.user.name}`,
+      link: `/`,
+    });
+    req.io.to(removedMember._id.toString()).emit('notification:new', notif);
+
+    // Notify group members too
+    await createNotification(req.io, groupId, req.user._id, `${removedMember.name} was removed from ${group.name} by ${req.user.name}`, `/groups/${groupId}`);
+  }
+
+  res.status(200).json({
+    message: `Removed ${removedMember ? removedMember.name : 'member'} from group`,
+    group: savedGroup,
+  });
 });
 
-const joinGroupWithToken = asyncHandler(async (req, res) => {
+const generateInviteToken = asyncHandler(async (req, res) => {
+  const { groupId } = req.params;
+
+  const group = await Group.findById(groupId);
+  if (!group) {
+    res.status(404);
+    throw new Error("Group not found");
+  }
+
+  if (group.admin.toString() !== req.user._id.toString()) {
+    res.status(401);
+    throw new Error("Only admin can generate invite");
+  }
+
+  const token = crypto.randomBytes(20).toString('hex');
+  group.inviteToken = token;
+  group.inviteTokenExpires = Date.now() + 3600000; // 1 hour
+  await group.save();
+
+  res.status(200).json({ inviteToken: token });
+});
+
+const joinGroupByToken = asyncHandler(async (req, res) => {
   const { token } = req.params;
-  const { _id: userId } = req.user;
+  const userId = req.user._id;
 
   const group = await Group.findOne({
     inviteToken: token,
@@ -193,69 +242,32 @@ const joinGroupWithToken = asyncHandler(async (req, res) => {
 
   if (group.members.includes(userId)) {
     res.status(400);
-    throw new Error("You are already a member of this group");
+    throw new Error("Already a member");
   }
 
   group.members.push(userId);
   group.inviteToken = undefined;
   group.inviteTokenExpires = undefined;
-
   await group.save();
 
   const user = await User.findById(userId);
-
   req.io.to(group._id.toString()).emit("group:member_added", {
     group,
     member: { _id: user._id, name: user.name, avatar: user.avatar, email: user.email }
   });
 
-  res.status(200).json({ message: "Successfully joined the group", group });
-});
+  // Notify user of join
+  const notif = await Notification.create({
+    user: userId,
+    message: `You joined ${group.name}`,
+    link: `/groups/${group._id}`,
+  });
+  req.io.to(userId.toString()).emit('notification:new', notif);
 
-const removeMemberFromGroup = asyncHandler(async (req, res) => {
-  const { groupId, memberId } = req.params;
-
-  const group = await Group.findById(groupId);
-
-  if (!group) {
-    res.status(404);
-    throw new Error("Group not found");
-  }
-
-  if (group.admin.toString() !== req.user._id.toString()) {
-    res.status(401);
-    throw new Error("User not authorized to remove members from this group");
-  }
-
-  if (memberId.toString() === req.user._id.toString()) {
-    res.status(400);
-    throw new Error("You cannot remove yourself from the group");
-  }
-
-  const memberExists = group.members.some(m => m.toString() === memberId.toString());
-  if (!memberExists) {
-    res.status(404);
-    throw new Error("Member not found in this group");
-  }
-
-  const removedMember = await User.findById(memberId);
-
-  group.members.pull(memberId);
-  const updatedGroup = await group.save();
-
-  req.io.to(groupId).emit("group:member_removed", { memberId, group: updatedGroup });
-
-  if (removedMember) {
-    await createNotification(
-      req.io,
-      groupId,
-      req.user._id,
-      `${removedMember.name} was removed from ${group.name} by ${req.user.name}.`,
-      `/groups/${groupId}`
-    );
-  }
-
-  res.status(200).json({ message: "Member removed successfully", group: updatedGroup });
+  res.status(200).json({
+    message: `Joined group ${group.name}`,
+    group,
+  });
 });
 
 export {
@@ -264,8 +276,8 @@ export {
   getMyGroups,
   getGroupDetails,
   deleteGroup,
-  addMemberToGroup,
+  addMember,
+  removeMember,
   generateInviteToken,
-  joinGroupWithToken,
-  removeMemberFromGroup
+  joinGroupByToken
 };
