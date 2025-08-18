@@ -226,7 +226,7 @@ const generateInviteToken = asyncHandler(async (req, res) => {
   res.status(200).json({ inviteToken: token });
 });
 
-const joinGroupByToken = asyncHandler(async (req, res) => {
+const joinGroupWithToken = asyncHandler(async (req, res) => {
   const { token } = req.params;
   const userId = req.user._id;
 
@@ -279,5 +279,5 @@ export {
   addMemberToGroup,
   removeMember,
   generateInviteToken,
-  joinGroupByToken
+  joinGroupWithToken
 };
