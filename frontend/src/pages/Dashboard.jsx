@@ -176,8 +176,9 @@ const Dashboard = () => {
                 />
             )}
             {isDMsModalOpen && (
-                <DirectMessagePage 
+                <DirectMessagesModal 
                     onClose={() => setIsDMsModalOpen(false)} 
+                    initialRecipientId={null}
                     // onUnreadCountChange={setTotalUnreadDMs} 
                 />
             )}
