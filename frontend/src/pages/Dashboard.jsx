@@ -7,6 +7,7 @@ import NotificationBell from '../components/NotificationBell.jsx';
 import DirectMessagesModal from '../components/DirectMessagesModal.jsx';
 import { FaUserCircle, FaPaperPlane } from 'react-icons/fa';
 import { useSocket } from '../context/SocketContext.jsx';
+import DirectMessagePage from './DirectMessagePage.jsx';
 
 const Dashboard = () => {
     const { user, logout, axiosInstance } = useAuth();
@@ -175,7 +176,7 @@ const Dashboard = () => {
                 />
             )}
             {isDMsModalOpen && (
-                <DirectMessagesModal 
+                <DirectMessagePage 
                     onClose={() => setIsDMsModalOpen(false)} 
                     // onUnreadCountChange={setTotalUnreadDMs} 
                 />
