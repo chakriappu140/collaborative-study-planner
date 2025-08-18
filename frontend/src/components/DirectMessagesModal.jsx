@@ -3,7 +3,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { useSocket } from "../context/SocketContext.jsx";
 import { FaPaperPlane, FaUserCircle, FaTimes } from "react-icons/fa";
 
-const DirectMessagesModal = ({ onClose, initialRecipientId  }) => {
+const DirectMessagesModal = ({ onClose, initialRecipientId }) => {
   const { axiosInstance, user } = useAuth();
   const socket = useSocket();
   const [allUsers, setAllUsers] = useState([]);
@@ -25,7 +25,7 @@ const DirectMessagesModal = ({ onClose, initialRecipientId  }) => {
   const fetchAllUsers = async () => {
     try {
       const res = await axiosInstance.get("/api/users");
-      setAllUsers(res.data.filter((u) => u._id !== user._id));
+      setAllUsers(res.data.filter((u) => String(u._id) !== String(user._id)));
     } catch (err) {
       console.error("Failed to fetch users:", err);
     } finally {
@@ -57,12 +57,15 @@ const DirectMessagesModal = ({ onClose, initialRecipientId  }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Auto-select recipient if DM opened from notification (from /direct/:id)
   useEffect(() => {
     if (allUsers.length > 0 && initialRecipientId) {
-      const found = allUsers.find(u => u._id === initialRecipientId);
-      if (found && (!recipient || recipient._id !== found._id)) setRecipient(found);
+      const found = allUsers.find(u => String(u._id) === String(initialRecipientId));
+      if (found && (!recipient || String(recipient._id) !== String(found._id))) {
+        setRecipient(found);
+      }
     }
-  }, [allUsers, initialRecipientId]);
+  }, [allUsers, initialRecipientId]); // <-- critical
 
   useEffect(() => {
     if (recipient) {
@@ -110,7 +113,10 @@ const DirectMessagesModal = ({ onClose, initialRecipientId  }) => {
         content: newMessage,
         replyTo: replyToMessage?._id || null,
       });
-      setMessages((prev) => [...prev, { ...res.data, sender: { _id: user._id, name: user.name, avatar: user.avatar } }]);
+      setMessages((prev) => [
+        ...prev,
+        { ...res.data, sender: { _id: user._id, name: user.name, avatar: user.avatar } },
+      ]);
       setNewMessage("");
       setReplyToMessage(null);
     } catch (err) {
@@ -241,17 +247,18 @@ const DirectMessagesModal = ({ onClose, initialRecipientId  }) => {
                       </div>
 
                       {/* Avatar on right */}
-                      {isOwnMessage ? (
-                        user.avatar ? (
-                          <img
-                            src={user.avatar}
-                            alt="avatar"
-                            className="w-8 h-8 rounded-full object-cover ml-2"
-                          />
-                        ) : (
-                          <FaUserCircle size={32} className="text-gray-400 ml-2" />
-                        )
-                      ) : null}
+                      {isOwnMessage
+                        ? user.avatar
+                          ? (
+                            <img
+                              src={user.avatar}
+                              alt="avatar"
+                              className="w-8 h-8 rounded-full object-cover ml-2"
+                            />
+                          ) : (
+                            <FaUserCircle size={32} className="text-gray-400 ml-2" />
+                          )
+                        : null}
                     </div>
                   );
                 })}
