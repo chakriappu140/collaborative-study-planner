@@ -39,10 +39,14 @@ const sendMessage = asyncHandler(async (req, res) => {
   const newMessage = await Message.create({
     group: groupId,
     sender,
-    content
+    content,
+    replyTo: replyTo || null
   });
 
-  await newMessage.populate('sender', 'name avatar email');
+  await newMessage.populate([
+    { path: 'sender', select: 'name avatar email' },
+    { path: 'replyTo', populate: { path: 'sender', select: 'name avatar email' } }
+  ]);
 
   req.io.to(groupId).emit("message:new", newMessage);
 

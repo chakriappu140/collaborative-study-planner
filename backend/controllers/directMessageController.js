@@ -14,10 +14,14 @@ const sendDirectMessage = asyncHandler(async (req, res) => {
   const newMessage = await DirectMessage.create({
     sender: senderId,
     recipient: recipientId,
-    content
+    content,
+    replyTo: replyTo || null
   });
 
-  await newMessage.populate('sender', 'name avatar email');
+  await newMessage.populate([
+    { path: 'sender', select: 'name avatar email' },
+    { path: 'replyTo', populate: { path: 'sender', select: 'name avatar email' } }
+  ]);
 
   req.io.to(recipientId.toString()).emit("dm:new", newMessage);
 

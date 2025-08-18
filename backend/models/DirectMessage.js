@@ -19,6 +19,11 @@ const directMessageSchema = mongoose.Schema({
     isRead: { // NEW FIELD
         type: Boolean,
         default: false
+    },
+    replyTo: { 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: "DirectMessage", 
+        default: null 
     }
 }, { timestamps: true });
 
