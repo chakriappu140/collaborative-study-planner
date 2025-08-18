@@ -1,9 +1,23 @@
 import asyncHandler from "express-async-handler";
 import DirectMessage from "../models/DirectMessage.js";
+import Notification from "../models/Notification.js";
 import mongoose from "mongoose";
 
+const createNotification = async (req, recipientId, senderId, message, link) => {
+  try {
+    const notif = await Notification.create({
+      user: recipientId,
+      message,
+      link,
+    });
+
+    req.io.to(recipientId.toString()).emit("notification:new", notif);
+  } catch (error) {
+    console.error("Failed to create notification:", error);
+  }
+};
+
 const sendDirectMessage = asyncHandler(async (req, res) => {
-  // ADD replyTo to the destructuring of req.body
   const { recipientId, content, replyTo } = req.body;
   const { _id: senderId } = req.user;
 
@@ -16,16 +30,24 @@ const sendDirectMessage = asyncHandler(async (req, res) => {
     sender: senderId,
     recipient: recipientId,
     content,
-    replyTo: replyTo || null
+    replyTo: replyTo || null,
   });
 
   await newMessage.populate('sender', 'name avatar email');
   await newMessage.populate({
     path: 'replyTo',
-    populate: { path: 'sender', select: 'name avatar email' }
+    populate: { path: 'sender', select: 'name avatar email' },
   });
 
   req.io.to(recipientId.toString()).emit("dm:new", newMessage);
+
+  const sender = await User.findById(senderId);
+
+  if (sender) {
+    const notifMessage = `${sender.name} sent you a new direct message`;
+    const link = `/direct/${senderId}`; // Adjust the link to your DM UI
+    await createNotification(req, recipientId, senderId, notifMessage, link);
+  }
 
   res.status(201).json(newMessage);
 });
@@ -94,4 +116,4 @@ const getUnreadDMCounts = asyncHandler(async (req, res) => {
   res.status(200).json(unreadCounts);
 });
 
-export { sendDirectMessage, getDirectMessages, markMessagesAsRead, getUnreadDMCounts };
+export { sendDirectMessage, getDirectMessages, markMessagesAsRead, getUnreadDMCounts, createNotification };
