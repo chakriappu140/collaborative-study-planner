@@ -100,7 +100,7 @@ const deleteGroup = asyncHandler(async (req, res) => {
   res.status(200).json({ message: "Group and related data deleted" });
 });
 
-const addMember = asyncHandler(async (req, res) => {
+const addMemberToGroup = asyncHandler(async (req, res) => {
   const { groupId } = req.params;
   const { email } = req.body;
 
@@ -276,7 +276,7 @@ export {
   getMyGroups,
   getGroupDetails,
   deleteGroup,
-  addMember,
+  addMemberToGroup,
   removeMember,
   generateInviteToken,
   joinGroupByToken
