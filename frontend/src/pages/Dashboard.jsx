@@ -18,42 +18,42 @@ const Dashboard = () => {
     const [isDMsModalOpen, setIsDMsModalOpen] = useState(false);
     const [loadingGroups, setLoadingGroups] = useState(true);
     const [initialInviteToken, setInitialInviteToken] = useState(null);
-    const [totalUnreadDMs, setTotalUnreadDMs] = useState(0);
+    // const [totalUnreadDMs, setTotalUnreadDMs] = useState(0);
 
-    useEffect(() => {
-        const fetchUnreadCount = async () => {
-            if (!user) return;
-            try {
-                const res = await axiosInstance.get('/api/messages/direct/unread-counts');
-                const counts = res.data.reduce((acc, curr) => {
-                    acc[curr._id] = curr.count;
-                    return acc;
-                }, {});
-                const totalCount = Object.values(counts).reduce((sum, item) => sum + item, 0);
-                setTotalUnreadDMs(totalCount);
-            } catch (err) {
-                console.error("Failed to fetch total unread DMs:", err);
-            }
-        };
+    // useEffect(() => {
+    //     const fetchUnreadCount = async () => {
+    //         if (!user) return;
+    //         try {
+    //             const res = await axiosInstance.get('/api/messages/direct/unread-counts');
+    //             const counts = res.data.reduce((acc, curr) => {
+    //                 acc[curr._id] = curr.count;
+    //                 return acc;
+    //             }, {});
+    //             const totalCount = Object.values(counts).reduce((sum, item) => sum + item, 0);
+    //             setTotalUnreadDMs(totalCount);
+    //         } catch (err) {
+    //             console.error("Failed to fetch total unread DMs:", err);
+    //         }
+    //     };
         
-        const dmReadHandler = () => {
-            fetchUnreadCount();
-        };
+    //     const dmReadHandler = () => {
+    //         fetchUnreadCount();
+    //     };
 
-        const dmNewHandler = () => {
-            fetchUnreadCount();
-        };
+    //     const dmNewHandler = () => {
+    //         fetchUnreadCount();
+    //     };
 
-        if (user && socket) {
-            fetchUnreadCount();
-            socket.on('dm:read', dmReadHandler);
-            socket.on('dm:new', dmNewHandler);
-            return () => {
-                socket.off('dm:read', dmReadHandler);
-                socket.off('dm:new', dmNewHandler);
-            }
-        }
-    }, [user, axiosInstance, socket]);
+    //     if (user && socket) {
+    //         fetchUnreadCount();
+    //         socket.on('dm:read', dmReadHandler);
+    //         socket.on('dm:new', dmNewHandler);
+    //         return () => {
+    //             socket.off('dm:read', dmReadHandler);
+    //             socket.off('dm:new', dmNewHandler);
+    //         }
+    //     }
+    // }, [user, axiosInstance, socket]);
 
     useEffect(() => {
         const fetchGroups = async () => {
