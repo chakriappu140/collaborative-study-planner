@@ -54,7 +54,7 @@ const sendMessage = asyncHandler(async (req, res) => {
   const group = await Group.findById(groupId);
   if (group) {
     await createNotification(req.io, groupId, senderId,
-      `${req.user.name} sent a new message in ${group.name}`, `/groups/${groupId}`
+      `${req.user.name} sent a new message in ${group.name}`, `/groups/${groupId}?tab=chat`
     );
   }
 

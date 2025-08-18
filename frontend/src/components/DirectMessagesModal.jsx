@@ -58,6 +58,13 @@ const DirectMessagesModal = ({ onClose }) => {
   }, []);
 
   useEffect(() => {
+    if (allUsers.length > 0 && initialRecipientId) {
+      const found = allUsers.find(u => u._id === initialRecipientId);
+      if (found) setRecipient(found);
+    }
+  }, [allUsers, initialRecipientId]);
+
+  useEffect(() => {
     if (recipient) {
       fetchMessages(recipient._id);
       setReplyToMessage(null);

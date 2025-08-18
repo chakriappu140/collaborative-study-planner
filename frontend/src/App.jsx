@@ -7,6 +7,7 @@ import GroupPage from "./pages/GroupPage.jsx"
 import InvitePage from "./pages/InvitePage.jsx"
 import ProfilePage from "./pages/ProfilePage.jsx" // NEW IMPORT
 import {SocketProvider} from "./context/SocketContext.jsx"
+import DirectMessagePage from "./pages/DirectMessagePage.jsx"
 
 const PrivateRoute = ({children}) => {
   const {user, loading} = useAuth()
@@ -51,6 +52,14 @@ function App() {
               element={
                 <PrivateRoute>
                   <GroupPage/>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/direct/:id"
+              element={
+                <PrivateRoute>
+                  <DirectMessagePage />
                 </PrivateRoute>
               }
             />

@@ -68,32 +68,37 @@ app.use(errorHandler);
 
 // Socket.IO connections
 io.on('connection', (socket) => {
-    console.log('🔗 A user connected with id:', socket.id);
-    const userId = socket.handshake.query.userId;
-    if (userId) {
-        // Join the user into a private room named after their user ID
-        socket.join(userId);
-        console.log(`🔗 User ${userId} connected and joined their private room.`);
-    }
+  const userId = socket.handshake.query.userId;
+  if (userId) {
+    socket.join(userId);
+    console.log(`User ${userId} connected and joined their private room.`);
+  }
 
-    socket.on('joinGroup', (groupId) => {
-        socket.join(groupId);
-        console.log(`User ${socket.id} joined group room: ${groupId}`);
-    });
+  socket.on('joinGroup', (groupId) => {
+    socket.join(groupId);
+    console.log(`User ${socket.id} joined group room: ${groupId}`);
+  });
 
-    socket.on('leaveGroup', (groupId) => {
-        socket.leave(groupId);
-        console.log(`User ${socket.id} left group room: ${groupId}`);
-    });
+  socket.on('leaveGroup', (groupId) => {
+    socket.leave(groupId);
+    console.log(`User ${socket.id} left group room: ${groupId}`);
+  });
 
-    socket.on('drawing', (data) => {
-        socket.to(data.groupId).emit('drawing', data);
-    });
+  socket.on('joinNotification', (userId) => {
+    socket.join(userId);
+    console.log(`User ${socket.id} joined notification room: ${userId}`);
+  });
 
-    socket.on('disconnect', () => {
-        console.log('User disconnected with id:', socket.id);
-    });
+  socket.on('leaveNotification', (userId) => {
+    socket.leave(userId);
+    console.log(`User ${socket.id} left notification room: ${userId}`);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('User disconnected with id:', socket.id);
+  });
 });
+
 
 const PORT = process.env.PORT || 5000;
 

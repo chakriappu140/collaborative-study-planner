@@ -86,7 +86,7 @@ const uploadFile = asyncHandler(async (req, res) => {
     groupId,
     uploaderId,
     `${uploaderName} uploaded a new file in ${group.name}`,
-    `/groups/${groupId}`
+    `/groups/${groupId}?tab=files`
   );
 
   res.status(201).json(fileDoc);
@@ -138,7 +138,7 @@ const deleteFile = asyncHandler(async (req, res) => {
     groupId,
     userId,
     `${req.user.name} deleted the file "${file.fileName}" from ${group.name}`,
-    `/groups/${groupId}`
+    `/groups/${groupId}?tab=files`
   );
 
   res.status(200).json({ message: "File deleted" });

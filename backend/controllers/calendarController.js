@@ -52,7 +52,7 @@ const createCalendarEvent = asyncHandler(async (req, res) => {
     const group = await Group.findById(groupId);
     if(group) {
         // FIX: Pass req.io to the createNotification function
-        await createNotification(req.io, groupId, senderId, `${req.user.name} created a new event: "${title}" in ${group.name}`, `/groups/${groupId}`);
+        await createNotification(req.io, groupId, senderId, `${req.user.name} created a new event: "${title}" in ${group.name}`, `/groups/${groupId}?tab=calendar`);
     }
 
     res.status(201).json({
@@ -98,7 +98,7 @@ const updateCalendarEvent = asyncHandler(async (req, res) => {
 
     if(group) {
         // FIX: Pass req.io to the createNotification function
-        await createNotification(req.io, groupId, senderId, `${req.user.name} updated the event "${title}" in ${group.name}`, `/groups/${groupId}`);
+        await createNotification(req.io, groupId, senderId, `${req.user.name} updated the event "${title}" in ${group.name}`, `/groups/${groupId}?tab=calendar`);
     }
 
     res.status(200).json(updatedEvent);
@@ -130,7 +130,7 @@ const deleteCalendarEvent = asyncHandler(async (req, res) => {
 
     if(group) {
         // FIX: Pass req.io to the createNotification function
-        await createNotification(req.io, groupId, senderId, `${req.user.name} deleted the event "${title}" from ${group.name}`, `/groups/${groupId}`);
+        await createNotification(req.io, groupId, senderId, `${req.user.name} deleted the event "${title}" from ${group.name}`, `/groups/${groupId}?tab=calendar`);
     }
 
     res.status(200).json({ message: "Event removed" });

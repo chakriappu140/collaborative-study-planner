@@ -61,7 +61,7 @@ const createTask = asyncHandler(async (req, res) => {
 
   if (group) {
     await createNotification(req.io, groupId, senderId,
-      `A new task '${task.title}' was created in ${group.name}`, `/groups/${groupId}`
+      `A new task '${task.title}' was created in ${group.name}`, `/groups/${groupId}?tab=tasks`
     );
   }
 
@@ -104,7 +104,7 @@ const updateTask = asyncHandler(async (req, res) => {
   const group = await Group.findById(groupId);
   if (group) {
     await createNotification(req.io, groupId, senderId,
-      `Task '${savedTask.title}' was updated in ${group.name}`, `/groups/${groupId}`
+      `Task '${savedTask.title}' was updated in ${group.name}`, `/groups/${groupId}?tab=tasks`
     );
   }
 
@@ -139,7 +139,7 @@ const deleteTask = asyncHandler(async (req, res) => {
   const group = await Group.findById(groupId);
   if (group) {
     await createNotification(req.io, groupId, senderId,
-      `Task '${taskTitle}' was deleted from ${group.name}`, `/groups/${groupId}`
+      `Task '${taskTitle}' was deleted from ${group.name}`, `/groups/${groupId}?tab=tasks`
     );
   }
 
