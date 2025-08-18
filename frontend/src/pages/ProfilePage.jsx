@@ -52,7 +52,7 @@ const ProfilePage = () => {
         headers: { "Content-Type": "multipart/form-data" },
       });
       toast.success("Avatar updated!");
-      setTimeout(() => navigate("/dashboard"), 1500); // redirect after success
+    //   setTimeout(() => navigate("/dashboard"), 1500); // redirect after success
     } catch {
       toast.error("Failed to update avatar.");
     } finally {
@@ -69,7 +69,7 @@ const ProfilePage = () => {
         { headers: { "Content-Type": "application/json" } }
       );
       toast.success("Profile info updated!");
-      setTimeout(() => navigate("/dashboard"), 1500);
+    //   setTimeout(() => navigate("/dashboard"), 1500);
     } catch {
       toast.error("Failed to update profile info.");
     } finally {
@@ -92,7 +92,7 @@ const ProfilePage = () => {
       setPassword("");
       setOldPassword("");
       setConfirmPassword("");
-      setTimeout(() => navigate("/dashboard"), 1500);
+    //   setTimeout(() => navigate("/dashboard"), 1500);
     } catch {
       toast.error("Failed to update password.");
     } finally {
