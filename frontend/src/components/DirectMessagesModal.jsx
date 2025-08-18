@@ -65,7 +65,8 @@ const DirectMessagesModal = ({ onClose, initialRecipientId }) => {
         setRecipient(found);
       }
     }
-  }, [allUsers, initialRecipientId]); // <-- critical
+  }, [allUsers, initialRecipientId]);
+
 
   useEffect(() => {
     if (recipient) {
