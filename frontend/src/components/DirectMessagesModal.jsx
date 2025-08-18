@@ -3,7 +3,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { useSocket } from "../context/SocketContext.jsx";
 import { FaPaperPlane, FaUserCircle, FaTimes } from "react-icons/fa";
 
-const DirectMessagesModal = ({ onClose }) => {
+const DirectMessagesModal = ({ onClose, initialRecipientId  }) => {
   const { axiosInstance, user } = useAuth();
   const socket = useSocket();
   const [allUsers, setAllUsers] = useState([]);
