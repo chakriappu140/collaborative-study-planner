@@ -13,22 +13,29 @@ const Whiteboard = ({ groupId }) => {
 
     useEffect(() => {
         const canvas = canvasRef.current;
-        canvas.width = canvas.offsetWidth;
-        canvas.height = canvas.offsetHeight;
         
+        // Make canvas responsive
+        const resizeCanvas = () => {
+            const container = canvas.parentElement;
+            canvas.width = container.offsetWidth - 32; // Account for padding
+            canvas.height = container.offsetHeight - 32;
+        };
+
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
         const context = canvas.getContext('2d');
         context.lineCap = 'round';
         context.lineJoin = 'round';
         context.strokeStyle = color;
-        context.lineWidth = 5;
+        context.lineWidth = isErasing ? 15 : 5;
         contextRef.current = context;
 
-        // Listener for drawing events from other users
         if (socket) {
             socket.on('drawing', (data) => {
                 const { x0, y0, x1, y1, color, isErasing } = data;
                 const remoteContext = canvas.getContext('2d');
-                remoteContext.strokeStyle = isErasing ? '#1f2937' : color;
+                remoteContext.strokeStyle = isErasing ? '#ffffff' : color;
                 remoteContext.lineWidth = isErasing ? 15 : 5;
                 remoteContext.beginPath();
                 remoteContext.moveTo(x0, y0);
@@ -37,8 +44,9 @@ const Whiteboard = ({ groupId }) => {
             });
         }
         
-        // Cleanup function for the socket listener
+        // Cleanup function for the socket listener and event listener
         return () => {
+            window.removeEventListener('resize', resizeCanvas);
             if (socket) {
                 socket.off('drawing');
             }
@@ -96,8 +104,8 @@ const Whiteboard = ({ groupId }) => {
 
     const toggleEraser = () => {
         setIsErasing(!isErasing);
-        contextRef.current.strokeStyle = isErasing ? color : '#1f2937';
-        contextRef.current.lineWidth = isErasing ? 5 : 15;
+        contextRef.current.strokeStyle = isErasing ? '#ffffff' : color;
+        contextRef.current.lineWidth = isErasing ? 15 : 5;
     };
 
     return (
@@ -131,7 +139,7 @@ const Whiteboard = ({ groupId }) => {
                 onMouseMove={draw}
                 onMouseUp={stopDrawing}
                 onMouseOut={stopDrawing}
-                className="bg-gray-900 border border-gray-700 rounded-lg"
+                className="bg-white border border-gray-700 rounded-lg w-full h-96"
             ></canvas>
         </div>
     );
