@@ -215,7 +215,7 @@ const removeMemberFromGroup = asyncHandler(async (req, res) => {
     req.io.to(removedMember._id.toString()).emit('notification:new', notif);
 
     // Notify group members too
-    await createNotification(req.io, groupId, req.user._id, `${removedMember.name} was removed from ${group.name} by ${req.user.name}`, `/groups/${groupId}`);
+    await createNotification(req.io, groupId, req.user._id, `${removedMember.name} was removed from ${group.name} by ${req.user.name}`, `/groups/${groupId}?tab=members`);
   }
 
   res.status(200).json({

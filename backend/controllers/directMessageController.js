@@ -44,7 +44,7 @@ const sendDirectMessage = asyncHandler(async (req, res) => {
   const sender = await User.findById(senderId);
   if (sender) {
     const notifMsg = `${sender.name} sent you a new message`;
-    const notifLink = `/direct/${recipientId}`; // Adjust as needed
+    const notifLink = `/direct/${senderId}`; // Adjust as needed
 
     await createNotification(req.io, recipientId, senderId, notifMsg, notifLink);
   }
