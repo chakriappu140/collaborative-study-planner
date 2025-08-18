@@ -43,10 +43,11 @@ const sendMessage = asyncHandler(async (req, res) => {
     replyTo: replyTo || null
   });
 
-  await newMessage.populate([
-    { path: 'sender', select: 'name avatar email' },
-    { path: 'replyTo', populate: { path: 'sender', select: 'name avatar email' } }
-  ]);
+  await newMessage.populate('sender', 'name avatar email');
+  await newMessage.populate({
+    path: 'replyTo',
+    populate: { path: 'sender', select: 'name avatar email' }
+  });
 
   req.io.to(groupId).emit("message:new", newMessage);
 
@@ -61,7 +62,10 @@ const sendMessage = asyncHandler(async (req, res) => {
 const getGroupMessages = asyncHandler(async (req, res) => {
   const { groupId } = req.params;
   const messages = await Message.find({ group: groupId })
-    .populate('sender', 'name avatar email')
+    .populate('sender', 'name avatar email').populate({
+      path: 'replyTo',
+      populate: { path: 'sender', select: 'name avatar email' }
+    })
     .sort({ createdAt: 1 });
 
   res.status(200).json(messages);

@@ -18,10 +18,11 @@ const sendDirectMessage = asyncHandler(async (req, res) => {
     replyTo: replyTo || null
   });
 
-  await newMessage.populate([
-    { path: 'sender', select: 'name avatar email' },
-    { path: 'replyTo', populate: { path: 'sender', select: 'name avatar email' } }
-  ]);
+  await newMessage.populate('sender', 'name avatar email');
+  await newMessage.populate({
+    path: 'replyTo',
+    populate: { path: 'sender', select: 'name avatar email' }
+  });
 
   req.io.to(recipientId.toString()).emit("dm:new", newMessage);
 
@@ -38,7 +39,10 @@ const getDirectMessages = asyncHandler(async (req, res) => {
       { sender: recipientId, recipient: userId }
     ]
   })
-    .populate('sender', 'name avatar email')
+    .populate('sender', 'name avatar email').populate({
+      path: 'replyTo',
+      populate: { path: 'sender', select: 'name avatar email' }
+    })
     .sort({ createdAt: 1 });
 
   res.status(200).json(messages);
