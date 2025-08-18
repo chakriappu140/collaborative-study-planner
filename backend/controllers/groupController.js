@@ -153,7 +153,7 @@ const addMemberToGroup = asyncHandler(async (req, res) => {
   });
 });
 
-const removeMember = asyncHandler(async (req, res) => {
+const removeMemberFromGroup = asyncHandler(async (req, res) => {
   const { groupId, memberId } = req.params;
 
   const group = await Group.findById(groupId);
@@ -277,7 +277,7 @@ export {
   getGroupDetails,
   deleteGroup,
   addMemberToGroup,
-  removeMember,
+  removeMemberFromGroup,
   generateInviteToken,
   joinGroupWithToken
 };
