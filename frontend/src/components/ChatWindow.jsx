@@ -11,8 +11,16 @@ const ChatWindow = ({ groupId }) => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
+  const messageRefs = useRef({});
   const [showEmojiPicker, setShowEmojiPicker] = useState(null);
   const [replyToMessage, setReplyToMessage] = useState(null);
+
+  useEffect(() => {
+    if (replyToMessage && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [replyToMessage]);
 
   const fetchMessages = async () => {
     try {
@@ -58,6 +66,18 @@ const ChatWindow = ({ groupId }) => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Scroll and temporary highlight function
+  const scrollToMessage = (messageId) => {
+    const el = messageRefs.current[messageId];
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.add("highlighted-message");
+      setTimeout(() => {
+        el.classList.remove("highlighted-message");
+      }, 2000);
+    }
+  };
+
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
@@ -96,50 +116,38 @@ const ChatWindow = ({ groupId }) => {
         </div>
       )}
 
-      <div
-        className="flex-1 overflow-y-auto mb-4 p-4 bg-gray-700 rounded-lg space-y-4"
-        style={{ height: "500px" }}
-      >
+      <div className="flex-1 overflow-y-auto mb-4 p-4 bg-gray-700 rounded-lg space-y-4" style={{ height: "500px" }}>
         {messages.map((msg) => {
           const isOwnMessage = msg.sender._id === user._id;
 
           return (
             <div
               key={msg._id}
-              className={`flex relative group ${
-                isOwnMessage ? "justify-end" : "justify-start"
-              }`}
+              ref={(el) => (messageRefs.current[msg._id] = el)}
+              className={`flex relative group ${isOwnMessage ? "justify-end" : "justify-start"}`}
             >
               <div className={`flex items-end space-x-2 ${isOwnMessage ? "flex-row-reverse" : ""}`}>
                 {!isOwnMessage ? (
                   msg.sender.avatar ? (
-                    <img
-                      src={msg.sender.avatar}
-                      alt="avatar"
-                      className="w-8 h-8 rounded-full object-cover"
-                    />
+                    <img src={msg.sender.avatar} alt="avatar" className="w-8 h-8 rounded-full object-cover" />
                   ) : (
                     <FaUserCircle size={32} className="text-gray-400" />
                   )
                 ) : null}
 
-                <div
-                  className={`p-3 rounded-lg max-w-[70%] ${
-                    isOwnMessage ? "bg-blue-600 text-white self-end" : "bg-gray-600 text-white self-start"
-                  }`}
-                >
+                <div className={`p-3 rounded-lg max-w-[70%] ${isOwnMessage ? "bg-blue-600 text-white self-end" : "bg-gray-600 text-white self-start"}`}>
                   {msg.replyTo && (
-                    <div className="mb-1 p-1 bg-gray-500 rounded text-xs italic select-none cursor-pointer">
+                    <div
+                      onClick={() => scrollToMessage(msg.replyTo._id)}
+                      className="mb-1 p-1 bg-gray-500 rounded text-xs italic cursor-pointer select-none"
+                      title="Jump to replied message"
+                    >
                       Reply to <b>{msg.replyTo.sender.name}:</b>{" "}
-                      {msg.replyTo.content.length > 60
-                        ? msg.replyTo.content.slice(0, 60) + "..."
-                        : msg.replyTo.content}
+                      {msg.replyTo.content.length > 60 ? msg.replyTo.content.slice(0, 60) + "..." : msg.replyTo.content}
                     </div>
                   )}
-
                   <span className="font-bold text-sm block">{isOwnMessage ? "You" : msg.sender.name}</span>
                   <p className="text-sm mt-1">{msg.content}</p>
-
                   <button
                     className="mt-1 text-xs text-indigo-300 underline hover:text-indigo-400"
                     onClick={() => setReplyToMessage(msg)}
@@ -151,11 +159,7 @@ const ChatWindow = ({ groupId }) => {
 
                 {isOwnMessage ? (
                   user.avatar ? (
-                    <img
-                      src={user.avatar}
-                      alt="avatar"
-                      className="w-8 h-8 rounded-full object-cover"
-                    />
+                    <img src={user.avatar} alt="avatar" className="w-8 h-8 rounded-full object-cover" />
                   ) : (
                     <FaUserCircle size={32} className="text-gray-400" />
                   )
@@ -169,6 +173,7 @@ const ChatWindow = ({ groupId }) => {
 
       <form onSubmit={handleSendMessage} className="flex mt-4 space-x-2">
         <input
+          ref={inputRef}
           type="text"
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}

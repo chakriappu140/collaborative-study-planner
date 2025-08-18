@@ -12,7 +12,15 @@ const DirectMessagesModal = ({ onClose }) => {
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
+  const messageRefs = useRef({});
   const [replyToMessage, setReplyToMessage] = useState(null);
+
+  useEffect(() => {
+    if (replyToMessage && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [replyToMessage]);
 
   const fetchAllUsers = async () => {
     try {
@@ -32,6 +40,15 @@ const DirectMessagesModal = ({ onClose }) => {
       await axiosInstance.put(`/api/messages/direct/read/${recipientId}`);
     } catch (err) {
       console.error("Failed to fetch messages:", err);
+    }
+  };
+
+  const scrollToMessage = (messageId) => {
+    const el = messageRefs.current[messageId];
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.add("highlighted-message");
+      setTimeout(() => el.classList.remove("highlighted-message"), 2000);
     }
   };
 
@@ -86,10 +103,7 @@ const DirectMessagesModal = ({ onClose }) => {
         content: newMessage,
         replyTo: replyToMessage?._id || null,
       });
-      setMessages((prev) => [
-        ...prev,
-        { ...res.data, sender: { _id: user._id, name: user.name, avatar: user.avatar } },
-      ]);
+      setMessages((prev) => [...prev, { ...res.data, sender: { _id: user._id, name: user.name, avatar: user.avatar } }]);
       setNewMessage("");
       setReplyToMessage(null);
     } catch (err) {
@@ -101,11 +115,15 @@ const DirectMessagesModal = ({ onClose }) => {
     setRecipient(selectedRecipient);
   };
 
-  return loading ? (
-    <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
-      <FaPaperPlane className="animate-spin text-white" size={30} />
-    </div>
-  ) : (
+  if (loading) {
+    return (
+      <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
+        <FaPaperPlane className="animate-spin text-white" size={30} />
+      </div>
+    );
+  }
+
+  return (
     <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
       <div className="bg-gray-800 rounded-lg p-8 w-full max-w-4xl h-5/6 shadow-lg flex">
         <div className="w-1/3 border-r border-gray-700 pr-4">
@@ -153,7 +171,10 @@ const DirectMessagesModal = ({ onClose }) => {
                     &times;
                   </button>
                   <p className="italic text-sm text-gray-300">
-                    Replying to <b>{replyToMessage.sender.name}</b>: {replyToMessage.content.length > 80 ? replyToMessage.content.slice(0, 80) + "..." : replyToMessage.content}
+                    Replying to <b>{replyToMessage.sender.name}</b>:{" "}
+                    {replyToMessage.content.length > 80
+                      ? replyToMessage.content.slice(0, 80) + "..."
+                      : replyToMessage.content}
                   </p>
                 </div>
               )}
@@ -164,6 +185,7 @@ const DirectMessagesModal = ({ onClose }) => {
                   return (
                     <div
                       key={msg._id}
+                      ref={(el) => (messageRefs.current[msg._id] = el)}
                       className={`flex relative group ${
                         isOwnMessage ? "justify-end" : "justify-start"
                       }`}
@@ -187,8 +209,15 @@ const DirectMessagesModal = ({ onClose }) => {
                         }`}
                       >
                         {msg.replyTo && (
-                          <div className="mb-1 p-1 bg-gray-500 rounded text-xs italic cursor-pointer select-none">
-                            Reply to <b>{msg.replyTo.sender.name}:</b> {msg.replyTo.content.length > 60 ? msg.replyTo.content.slice(0, 60) + "..." : msg.replyTo.content}
+                          <div
+                            onClick={() => scrollToMessage(msg.replyTo._id)}
+                            className="mb-1 p-1 bg-gray-500 rounded text-xs italic cursor-pointer select-none"
+                            title="Jump to replied message"
+                          >
+                            Reply to <b>{msg.replyTo.sender.name}:</b>{" "}
+                            {msg.replyTo.content.length > 60
+                              ? msg.replyTo.content.slice(0, 60) + "..."
+                              : msg.replyTo.content}
                           </div>
                         )}
                         <span className="font-bold text-sm block">
@@ -221,8 +250,10 @@ const DirectMessagesModal = ({ onClose }) => {
                 })}
                 <div ref={messagesEndRef} />
               </div>
+
               <form onSubmit={handleSendMessage} className="flex mt-4 space-x-2">
                 <input
+                  ref={inputRef}
                   type="text"
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
@@ -230,10 +261,7 @@ const DirectMessagesModal = ({ onClose }) => {
                   className="flex-1 px-3 py-2 text-white bg-gray-700 border border-gray-600 rounded-lg"
                   required
                 />
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-indigo-600 rounded-lg hover:bg-indigo-700"
-                >
+                <button type="submit" className="px-4 py-2 bg-indigo-600 rounded-lg hover:bg-indigo-700">
                   <FaPaperPlane />
                 </button>
               </form>
