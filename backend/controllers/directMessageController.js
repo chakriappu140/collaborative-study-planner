@@ -79,7 +79,7 @@ const markMessagesAsRead = asyncHandler(async (req, res) => {
   res.status(200).json({ message: "Messages marked read" });
 });
 
-const getUnreadCounts = asyncHandler(async (req, res) => {
+const getUnreadDMCounts = asyncHandler(async (req, res) => {
   const userId = req.user._id;
 
   if (!userId || !userId.toString()) {
@@ -105,6 +105,6 @@ export {
   sendDirectMessage,
   getDirectMessages,
   markMessagesAsRead,
-  getUnreadCounts
+  getUnreadDMCounts
 };
 
