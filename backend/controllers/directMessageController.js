@@ -2,6 +2,7 @@ import asyncHandler from "express-async-handler";
 import DirectMessage from "../models/DirectMessage.js";
 import User from "../models/User.js";
 import Notification from "../models/Notification.js";
+import mongoose from "mongoose"
 
 const createNotification = async (io, recipientId, senderId, message, link) => {
   try {
