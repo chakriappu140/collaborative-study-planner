@@ -25,6 +25,7 @@ const ManageMembersModal = ({ group, onClose, onMembersUpdated }) => {
             const updatedMembers = members.filter(member => member._id !== memberId);
             setMembers(updatedMembers);
             onMembersUpdated(updatedMembers); // Notify parent component
+            //ok
         } catch (err) {
             setError(err.response?.data?.message || "Failed to remove member");
         } finally {
