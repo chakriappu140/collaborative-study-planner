@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useSocket } from "../context/SocketContext.jsx";
 
@@ -32,10 +32,8 @@ export const NotificationProvider = ({ children }) => {
 
   useEffect(() => {
     if (socket && user) {
-      // Join personal notification room
       socket.emit("joinNotification", user._id);
 
-      // Listen for new notifications
       const handleNewNotification = (newNotification) => {
         setNotifications((prev) => [newNotification, ...prev]);
       };
@@ -48,7 +46,6 @@ export const NotificationProvider = ({ children }) => {
     }
   }, [socket, user]);
 
-  // Mark notification as read
   const markAsRead = async (notificationId) => {
     try {
       await axiosInstance.put(`/api/notifications/${notificationId}`);
@@ -60,7 +57,6 @@ export const NotificationProvider = ({ children }) => {
     }
   };
 
-  // Delete single notification
   const deleteNotification = async (notificationId) => {
     try {
       await axiosInstance.delete(`/api/notifications/${notificationId}`);
@@ -70,7 +66,6 @@ export const NotificationProvider = ({ children }) => {
     }
   };
 
-  // Clear all notifications
   const clearAll = async () => {
     try {
       await axiosInstance.delete("/api/notifications");

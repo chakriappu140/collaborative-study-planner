@@ -74,17 +74,11 @@ const GroupPage = () => {
     };
 
     const handleMemberAdded = ({ group: updatedGroup }) => {
-      setGroup((prevGroup) => ({
-        ...prevGroup,
-        members: updatedGroup.members,
-      }));
+      setGroup(updatedGroup); // updatedGroup already has populated members
     };
 
     const handleMemberRemoved = ({ memberId, group: updatedGroup }) => {
-      setGroup((prevGroup) => ({
-        ...prevGroup,
-        members: updatedGroup.members.filter((m) => m._id !== memberId),
-      }));
+      setGroup(updatedGroup); // updatedGroup with updated member list
 
       if (memberId === user._id) {
         alert('You have been removed from this group.');
@@ -102,6 +96,7 @@ const GroupPage = () => {
       socket.off('group:member_removed', handleMemberRemoved);
     };
   }, [socket, groupId, navigate, user]);
+
 
   const handleDeleteGroup = async () => {
     if (

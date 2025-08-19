@@ -114,9 +114,8 @@ io.on('connection', (socket) => {
       socket.to(data.groupId).emit("drawing_inactive", { ...data, socketId: socket.id });
     }
   });
-
-
 });
+
 
 
 const PORT = process.env.PORT || 5000;

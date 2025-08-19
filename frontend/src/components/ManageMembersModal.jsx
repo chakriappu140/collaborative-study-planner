@@ -8,6 +8,10 @@ const ManageMembersModal = ({ group, onClose, onMembersUpdated }) => {
     const [error, setError] = useState(null);
     const { axiosInstance, user } = useAuth();
 
+    useEffect(() => {
+        setMembers(group.members);
+    }, [group.members]);
+
     const handleRemoveMember = async (memberId) => {
         if (!window.confirm("Are you sure you want to remove this member?")) {
             return;

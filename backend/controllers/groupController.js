@@ -134,29 +134,31 @@ const addMemberToGroup = asyncHandler(async (req, res) => {
   group.members.push(userToAdd._id);
   await group.save();
 
-  req.io.to(groupId).emit("group:member_added", {
-    group,
+  // Populate members before emitting
+  const populatedGroup = await Group.findById(group._id).populate('members', 'name avatar email');
+
+  req.io.to(group._id.toString()).emit('group:member_added', {
+    group: populatedGroup,
     member: { _id: userToAdd._id, name: userToAdd.name, avatar: userToAdd.avatar, email: userToAdd.email }
   });
 
-  // 1. Notify the added user directly
+  // Notify added user directly
   const notif = await Notification.create({
     user: userToAdd._id,
     message: `You were added to ${group.name} by ${req.user.name}`,
-    link: `/groups/${groupId}`
+    link: `/groups/${group._id}`
   });
   req.io.to(userToAdd._id.toString()).emit('notification:new', notif);
 
-  // 2. Notify all other group members (excluding admin/requester and added user)
-  const otherRecipients = group.members.filter(
-    m => m.toString() !== req.user._id.toString() && m.toString() !== userToAdd._id.toString()
-  );
+  // Notify all other group members except admin and added user
+  const otherRecipients = populatedGroup.members
+    .filter(m => m._id.toString() !== req.user._id.toString() && m._id.toString() !== userToAdd._id.toString());
 
   if (otherRecipients.length) {
     const message = `${userToAdd.name} was added to ${group.name} by ${req.user.name}`;
-    const link = `/groups/${groupId}?tab=members`;
-    const notifications = otherRecipients.map(userId => ({
-      user: userId,
+    const link = `/groups/${group._id}?tab=members`;
+    const notifications = otherRecipients.map(user => ({
+      user: user._id,
       message,
       link
     }));
@@ -169,7 +171,7 @@ const addMemberToGroup = asyncHandler(async (req, res) => {
 
   res.status(200).json({
     message: `Added ${userToAdd.name} to group`,
-    group,
+    group: populatedGroup,
   });
 });
 
