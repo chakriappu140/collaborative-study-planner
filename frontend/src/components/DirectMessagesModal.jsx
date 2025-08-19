@@ -3,7 +3,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { useSocket } from "../context/SocketContext.jsx";
 import { FaPaperPlane, FaUserCircle, FaTimes } from "react-icons/fa";
 
-const DirectMessagesModal = ({ onClose, initialRecipientId }) => {
+const DirectMessagesModal = ({ onClose, initialRecipientId, onUnreadCountChange }) => {
   const { axiosInstance, user } = useAuth();
   const socket = useSocket();
   const [allUsers, setAllUsers] = useState([]);
@@ -38,6 +38,11 @@ const DirectMessagesModal = ({ onClose, initialRecipientId }) => {
       const res = await axiosInstance.get(`/api/messages/direct/${recipientId}`);
       setMessages(res.data);
       await axiosInstance.put(`/api/messages/direct/read/${recipientId}`);
+
+      // Trigger unread count fetch to update badge on Dashboard
+      if (onUnreadCountChange) {
+        onUnreadCountChange();
+      }
     } catch (err) {
       console.error("Failed to fetch messages:", err);
     }

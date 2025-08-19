@@ -21,19 +21,19 @@ const Dashboard = () => {
     const [initialInviteToken, setInitialInviteToken] = useState(null);
     const [totalUnreadDMs, setTotalUnreadDMs] = useState(0);
 
+    const fetchUnreadCount = async () => {
+        if (!user) return;
+        try {
+        const res = await axiosInstance.get('/api/messages/direct/unread-counts');
+        const totalCount = res.data.reduce((sum, item) => sum + item.count, 0);
+        setTotalUnreadDMs(totalCount);
+        } catch (err) {
+        console.error("Failed to fetch total unread DMs:", err);
+        }
+    };
+
     useEffect(() => {
         if (!user || !socket) return;
-
-        const fetchUnreadCount = async () => {
-            try {
-                const res = await axiosInstance.get('/api/messages/direct/unread-counts');
-                // res.data -> array of { _id: senderId, count: unreadCountWithThem }
-                const totalCount = res.data.reduce((sum, item) => sum + item.count, 0);
-                setTotalUnreadDMs(totalCount);
-            } catch (err) {
-                console.error("Failed to fetch total unread DMs:", err);
-            }
-        };
 
         fetchUnreadCount();
 
@@ -172,7 +172,7 @@ const Dashboard = () => {
                 <DirectMessagesModal 
                     onClose={() => setIsDMsModalOpen(false)} 
                     initialRecipientId={null}
-                    // onUnreadCountChange={setTotalUnreadDMs} 
+                    onUnreadCountChange={setTotalUnreadDMs} 
                 />
             )}
         </div>
