@@ -103,6 +103,19 @@ io.on('connection', (socket) => {
       socket.to(data.groupId).emit("drawing", data);
     }
   });
+
+  socket.on("drawing_active", (data) => {
+    if (data.groupId) {
+      socket.to(data.groupId).emit("drawing_active", { ...data, socketId: socket.id });
+    }
+  });
+  socket.on("drawing_inactive", (data) => {
+    if (data.groupId) {
+      socket.to(data.groupId).emit("drawing_inactive", { ...data, socketId: socket.id });
+    }
+  });
+
+
 });
 
 
