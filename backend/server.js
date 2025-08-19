@@ -97,6 +97,12 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log('User disconnected with id:', socket.id);
   });
+
+  socket.on("drawing", (data) => {
+    if (data.groupId) {
+      socket.to(data.groupId).emit("drawing", data);
+    }
+  });
 });
 
 
