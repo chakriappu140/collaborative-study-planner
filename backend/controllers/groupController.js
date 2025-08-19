@@ -239,6 +239,7 @@ const generateInviteToken = asyncHandler(async (req, res) => {
     res.status(401);
     throw new Error("Only admin can generate invite");
   }
+  // why
 
   const token = crypto.randomBytes(20).toString('hex');
   group.inviteToken = token;
