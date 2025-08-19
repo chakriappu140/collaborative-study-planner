@@ -24,11 +24,11 @@ const Dashboard = () => {
     const fetchUnreadCount = async () => {
         if (!user) return;
         try {
-        const res = await axiosInstance.get('/api/messages/direct/unread-counts');
-        const totalCount = res.data.reduce((sum, item) => sum + item.count, 0);
-        setTotalUnreadDMs(totalCount);
+            const res = await axiosInstance.get('/api/messages/direct/unread-counts');
+            const totalCount = res.data.reduce((sum, item) => sum + item.count, 0);
+            setTotalUnreadDMs(totalCount);
         } catch (err) {
-        console.error("Failed to fetch total unread DMs:", err);
+            console.error("Failed to fetch total unread DMs:", err);
         }
     };
 

@@ -15,6 +15,7 @@ const DirectMessagesModal = ({ onClose, initialRecipientId, onUnreadCountChange 
   const inputRef = useRef(null);
   const messageRefs = useRef({});
   const [replyToMessage, setReplyToMessage] = useState(null);
+  const [unreadCounts, setUnreadCounts] = useState({});
 
   useEffect(() => {
     if (replyToMessage && inputRef.current) {
@@ -39,12 +40,27 @@ const DirectMessagesModal = ({ onClose, initialRecipientId, onUnreadCountChange 
       setMessages(res.data);
       await axiosInstance.put(`/api/messages/direct/read/${recipientId}`);
 
-      // Trigger unread count fetch to update badge on Dashboard
+      // Update unread count badge on Dashboard
       if (onUnreadCountChange) {
         onUnreadCountChange();
       }
+      // Refresh unread counts inside this modal
+      fetchUnreadCounts();
     } catch (err) {
       console.error("Failed to fetch messages:", err);
+    }
+  };
+
+  const fetchUnreadCounts = async () => {
+    try {
+      const res = await axiosInstance.get('/api/messages/direct/unread-counts');
+      const countsMap = res.data.reduce((acc, item) => {
+        acc[item._id] = item.count;
+        return acc;
+      }, {});
+      setUnreadCounts(countsMap);
+    } catch (err) {
+      console.error("Failed to fetch unread counts:", err);
     }
   };
 
@@ -59,6 +75,7 @@ const DirectMessagesModal = ({ onClose, initialRecipientId, onUnreadCountChange 
 
   useEffect(() => {
     fetchAllUsers();
+    fetchUnreadCounts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -72,7 +89,6 @@ const DirectMessagesModal = ({ onClose, initialRecipientId, onUnreadCountChange 
     }
   }, [allUsers, initialRecipientId]);
 
-
   useEffect(() => {
     if (recipient) {
       fetchMessages(recipient._id);
@@ -84,6 +100,8 @@ const DirectMessagesModal = ({ onClose, initialRecipientId, onUnreadCountChange 
         if (recipient && newDM.sender._id === recipient._id) {
           setMessages((prev) => [...prev, newDM]);
           axiosInstance.put(`/api/messages/direct/read/${recipient._id}`);
+          fetchUnreadCounts();
+          if (onUnreadCountChange) onUnreadCountChange();
         }
       };
       const reactionAddedHandler = (updatedMessage) => {
@@ -125,6 +143,8 @@ const DirectMessagesModal = ({ onClose, initialRecipientId, onUnreadCountChange 
       ]);
       setNewMessage("");
       setReplyToMessage(null);
+      fetchUnreadCounts();
+      if (onUnreadCountChange) onUnreadCountChange();
     } catch (err) {
       console.error("Failed to send message:", err);
     }
@@ -157,16 +177,23 @@ const DirectMessagesModal = ({ onClose, initialRecipientId, onUnreadCountChange 
               <div
                 key={u._id}
                 onClick={() => handleRecipientSelect(u)}
-                className={`p-3 rounded-lg flex items-center space-x-3 cursor-pointer ${
+                className={`p-3 rounded-lg flex items-center justify-between cursor-pointer ${
                   recipient?._id === u._id ? "bg-indigo-600" : "bg-gray-700 hover:bg-gray-600"
                 }`}
               >
-                {u.avatar ? (
-                  <img src={u.avatar} alt="Avatar" className="w-8 h-8 rounded-full object-cover" />
-                ) : (
-                  <FaUserCircle size={32} className="text-gray-400" />
+                <div className="flex items-center space-x-3">
+                  {u.avatar ? (
+                    <img src={u.avatar} alt="Avatar" className="w-8 h-8 rounded-full object-cover" />
+                  ) : (
+                    <FaUserCircle size={32} className="text-gray-400" />
+                  )}
+                  <span className="font-semibold">{u.name}</span>
+                </div>
+                {unreadCounts[u._id] > 0 && (
+                  <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 bg-red-600 rounded-full">
+                    {unreadCounts[u._id]}
+                  </span>
                 )}
-                <span className="font-semibold">{u.name}</span>
               </div>
             ))}
           </div>
