@@ -16,6 +16,7 @@ const LoginPage = () => {
             // Simply navigate to the dashboard after a successful login.
             // The dashboard will handle the rest.
             navigate("/dashboard");
+            window.location.reload();
         } catch (authError) {
             setError(authError.message);
         }
