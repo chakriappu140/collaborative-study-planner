@@ -7,8 +7,12 @@ const router = express.Router();
 router.route('/')
     .post(protect, sendDirectMessage);
 
+router.route('/unread-counts')
+        .get(protect, getUnreadDMCounts);
+        
 router.route('/:recipientId')
     .get(protect, getDirectMessages);
+
 
 router.route('/read/:recipientId')
     .put(protect, markMessagesAsRead);

@@ -19,42 +19,34 @@ const Dashboard = () => {
     const [isDMsModalOpen, setIsDMsModalOpen] = useState(false);
     const [loadingGroups, setLoadingGroups] = useState(true);
     const [initialInviteToken, setInitialInviteToken] = useState(null);
-    // const [totalUnreadDMs, setTotalUnreadDMs] = useState(0);
+    const [totalUnreadDMs, setTotalUnreadDMs] = useState(0);
 
-    // useEffect(() => {
-    //     const fetchUnreadCount = async () => {
-    //         if (!user) return;
-    //         try {
-    //             const res = await axiosInstance.get('/api/messages/direct/unread-counts');
-    //             const counts = res.data.reduce((acc, curr) => {
-    //                 acc[curr._id] = curr.count;
-    //                 return acc;
-    //             }, {});
-    //             const totalCount = Object.values(counts).reduce((sum, item) => sum + item, 0);
-    //             setTotalUnreadDMs(totalCount);
-    //         } catch (err) {
-    //             console.error("Failed to fetch total unread DMs:", err);
-    //         }
-    //     };
-        
-    //     const dmReadHandler = () => {
-    //         fetchUnreadCount();
-    //     };
+    useEffect(() => {
+        if (!user || !socket) return;
 
-    //     const dmNewHandler = () => {
-    //         fetchUnreadCount();
-    //     };
+        const fetchUnreadCount = async () => {
+            try {
+                const res = await axiosInstance.get('/api/messages/direct/unread-counts');
+                // res.data -> array of { _id: senderId, count: unreadCountWithThem }
+                const totalCount = res.data.reduce((sum, item) => sum + item.count, 0);
+                setTotalUnreadDMs(totalCount);
+            } catch (err) {
+                console.error("Failed to fetch total unread DMs:", err);
+            }
+        };
 
-    //     if (user && socket) {
-    //         fetchUnreadCount();
-    //         socket.on('dm:read', dmReadHandler);
-    //         socket.on('dm:new', dmNewHandler);
-    //         return () => {
-    //             socket.off('dm:read', dmReadHandler);
-    //             socket.off('dm:new', dmNewHandler);
-    //         }
-    //     }
-    // }, [user, axiosInstance, socket]);
+        fetchUnreadCount();
+
+        const updateUnread = () => fetchUnreadCount();
+        socket.on('dm:read', updateUnread);
+        socket.on('dm:new', updateUnread);
+
+        return () => {
+            socket.off('dm:read', updateUnread);
+            socket.off('dm:new', updateUnread);
+        };
+    }, [user, socket, axiosInstance]);
+
 
     useEffect(() => {
         const fetchGroups = async () => {
@@ -109,12 +101,13 @@ const Dashboard = () => {
                         title="Direct Messages"
                     >
                         <FaPaperPlane className="w-5 h-5" />
-                        {/* {totalUnreadDMs > 0 && (
-                            <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 bg-red-600 rounded-full">
+                        {totalUnreadDMs > 0 && (
+                            <span className="absolute top-0 right-0 -mt-1 -mr-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 bg-red-600 rounded-full z-10">
                                 {totalUnreadDMs}
                             </span>
-                        )} */}
+                        )}
                     </button>
+
                     <button
                         onClick={handleLogout}
                         className="px-4 py-2 text-white bg-red-600 rounded hover:bg-red-700 transition-colors"
